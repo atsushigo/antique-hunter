@@ -10,6 +10,9 @@ build/
 .idea/
 uploads/
 tmp/
+backend/data/
+*.sqlite
+*.sqlite-journal
 coverage/
 .nyc_output/
 playwright-report/

@@ -17,7 +17,7 @@ AI 輔助的日本二手/古董撿漏工具 — Mobile-First PWA + Node.js API
 
 - **Frontend**：Vue 3 Composition API + Vuetify 3 + Vite + PWA
 - **Backend**：Node.js + Express + Sequelize
-- **Database**：PostgreSQL + Redis
+- **Database**：SQLite（Phase 1；Phase 2+ 資料量大時可換 PostgreSQL，Sequelize dialect 換一行）
 - **AI**：Anthropic Claude Vision（API）
 - **Deployment**：共用 Hetzner `personal-02` VPS（非交易類個人服務公用）
 - **Language**：純 JavaScript（不用 TypeScript）
@@ -30,13 +30,10 @@ AI 輔助的日本二手/古董撿漏工具 — Mobile-First PWA + Node.js API
 ## Local Dev
 
 ```bash
-# 1. 起 PostgreSQL + Redis
-docker compose up -d
+# Backend（SQLite 自動建檔，免起 Docker）
+cd backend && npm install && npm run db:migrate && npm run db:seed && npm run dev
 
-# 2. Backend
-cd backend && npm install && npm run dev
-
-# 3. Frontend
+# Frontend
 cd frontend && npm install && npm run dev
 ```
 
