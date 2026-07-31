@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+uploads/
+tmp/
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
