@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { config, isDev } from './config.js';
 import { connect, sequelize } from './db.js';
 import { marketsRouter } from './routes/markets.js';
+import { appraisalRouter } from './routes/appraisal.js';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(
 );
 
 app.use('/api/markets', marketsRouter);
+app.use('/api/appraisal', appraisalRouter);
 
 app.get('/api/health', async (req, res) => {
   let db = 'ok';
