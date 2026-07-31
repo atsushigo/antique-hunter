@@ -1,0 +1,30 @@
+<template>
+  <v-bottom-navigation :model-value="active" grow color="primary" bg-color="surface">
+    <v-btn value="home" @click="go('home')">
+      <v-icon>mdi-camera</v-icon>
+      <span>拍照</span>
+    </v-btn>
+    <v-btn value="markets" @click="go('markets')">
+      <v-icon>mdi-map-marker</v-icon>
+      <span>市集</span>
+    </v-btn>
+    <v-btn value="camera" @click="go('camera')" style="display:none" />
+  </v-bottom-navigation>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
+const route = useRoute();
+const router = useRouter();
+
+const active = computed(() => {
+  if (route.name === 'markets') return 'markets';
+  return 'home';
+});
+
+function go(name) {
+  if (route.name !== name) router.push({ name });
+}
+</script>
