@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config, isDev } from './config.js';
 import { connect, sequelize } from './db.js';
+import { marketsRouter } from './routes/markets.js';
 
 const app = express();
 
@@ -24,6 +25,8 @@ app.use(
     legacyHeaders: false,
   })
 );
+
+app.use('/api/markets', marketsRouter);
 
 app.get('/api/health', async (req, res) => {
   let db = 'ok';
