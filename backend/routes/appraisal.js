@@ -312,6 +312,14 @@ appraisalRouter.get('/stats', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// 一次刪除所有 mock 資料（未設 ANTHROPIC_API_KEY 時的假結果）
+appraisalRouter.delete('/mocks', async (req, res, next) => {
+  try {
+    const n = await AppraisalLog.destroy({ where: { mock: true } });
+    res.json({ data: { deleted: n } });
+  } catch (err) { next(err); }
+});
+
 // 收藏 toggle
 appraisalRouter.post('/:id/collect', async (req, res, next) => {
   try {

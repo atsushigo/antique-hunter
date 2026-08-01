@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { api } from '../api.js';
-import { enqueueAppraisal, listAppraisals, updateAppraisal, pendingAppraisals, getDb } from '../db.js';
+import { enqueueAppraisal, listAppraisals, updateAppraisal, pendingAppraisals, getDb, purgeMockAppraisals } from '../db.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -22,6 +22,11 @@ export const useAppraisalsStore = defineStore('appraisals', {
   },
   actions: {
     async loadLocal() {
+      // 自動清 mock 結果（等於 API key 沒設時的假資料，看了誤導）
+      try {
+        const n = await purgeMockAppraisals();
+        if (n > 0) console.log(`[appraisals] purged ${n} mock entries`);
+      } catch (err) { console.warn('purge failed:', err); }
       this.list = await listAppraisals();
       return this.list;
     },

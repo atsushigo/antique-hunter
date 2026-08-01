@@ -50,3 +50,12 @@ export async function pendingAppraisals() {
   const db = await getDb();
   return db.getAllFromIndex('appraisals', 'status', IDBKeyRange.only('pending'));
 }
+
+// 清所有 mock 結果的本地紀錄
+export async function purgeMockAppraisals() {
+  const db = await getDb();
+  const all = await db.getAll('appraisals');
+  const mockIds = all.filter((a) => a.result?.mock === true).map((a) => a.localId);
+  for (const id of mockIds) await db.delete('appraisals', id);
+  return mockIds.length;
+}
