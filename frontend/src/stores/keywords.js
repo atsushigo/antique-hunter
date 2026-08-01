@@ -33,6 +33,8 @@ export const useKeywordsStore = defineStore('keywords', {
       const { data } = await api.patch(`/keywords/${id}`, patch);
       const idx = this.list.findIndex((k) => k.id === id);
       if (idx !== -1) this.list.splice(idx, 1, data.data);
+      // 改 sites / excludeKeywords / isActive 都會影響 inbox 內容，invalidate cache
+      this.inboxLoadedAt = null;
       return data.data;
     },
     async remove(id) {

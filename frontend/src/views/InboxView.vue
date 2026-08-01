@@ -2,6 +2,14 @@
   <v-container class="px-2 pb-16">
     <div class="d-flex align-center mb-2 px-1">
       <div class="text-h6">收件匣</div>
+      <v-btn
+        size="x-small"
+        variant="text"
+        icon="mdi-refresh"
+        :loading="loading"
+        class="ms-1"
+        @click="load"
+      />
       <v-spacer />
       <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
         <v-btn :value="1" size="x-small">今日</v-btn>
