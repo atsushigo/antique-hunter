@@ -22,11 +22,25 @@
         鑑定失敗：{{ entry.error || '未知錯誤' }}
       </v-alert>
 
-      <AppraisalResult v-if="entry.result" :result="entry.result" />
+      <AppraisalResult
+        v-if="entry.result"
+        :result="entry.result"
+        :collecting="collecting"
+        @toggle-collect="onToggleCollect"
+      />
 
       <div class="mt-6 d-flex ga-2">
         <v-btn variant="outlined" block prepend-icon="mdi-home" @click="$router.push('/')">首頁</v-btn>
-        <v-btn color="primary" block prepend-icon="mdi-camera" @click="$router.replace('/camera')">再拍一張</v-btn>
+        <v-btn
+          v-if="entry.type === 'url'"
+          color="primary" block prepend-icon="mdi-link-variant"
+          @click="$router.replace('/url')"
+        >再貼一個 URL</v-btn>
+        <v-btn
+          v-else
+          color="primary" block prepend-icon="mdi-camera"
+          @click="$router.replace('/camera')"
+        >再拍一張</v-btn>
       </div>
     </template>
 
@@ -45,10 +59,25 @@ const props = defineProps({ localId: { type: [String, Number], required: true } 
 const store = useAppraisalsStore();
 const entry = ref(null);
 const loading = ref(true);
+const collecting = ref(false);
+
+async function refresh() {
+  entry.value = await store.getOne(props.localId);
+}
+
+async function onToggleCollect() {
+  collecting.value = true;
+  try {
+    await store.toggleCollect(props.localId);
+    await refresh();
+  } finally {
+    collecting.value = false;
+  }
+}
 
 onMounted(async () => {
   try {
-    entry.value = await store.getOne(props.localId);
+    await refresh();
   } finally {
     loading.value = false;
   }

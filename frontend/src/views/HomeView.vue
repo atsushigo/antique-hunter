@@ -1,6 +1,6 @@
 <template>
   <v-container class="px-4">
-    <div class="text-center pt-6 pb-2">
+    <div class="pt-6 pb-2">
       <v-btn
         color="primary"
         size="x-large"
@@ -11,6 +11,31 @@
       >
         拍照鑑定
       </v-btn>
+      <v-btn
+        color="primary"
+        variant="tonal"
+        rounded="xl"
+        block
+        prepend-icon="mdi-link-variant"
+        class="mt-2"
+        @click="$router.push('/url')"
+      >
+        貼 URL 估價（Mercari / Yahoo Auction / Rakuma）
+      </v-btn>
+      <div class="d-flex ga-2 mt-2">
+        <v-btn
+          variant="text"
+          size="small"
+          prepend-icon="mdi-calendar-month"
+          @click="$router.push('/calendar')"
+        >市集日曆</v-btn>
+        <v-btn
+          variant="text"
+          size="small"
+          prepend-icon="mdi-star"
+          @click="$router.push('/collection')"
+        >收藏</v-btn>
+      </div>
     </div>
 
     <div class="mt-8">

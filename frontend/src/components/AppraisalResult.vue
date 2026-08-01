@@ -9,17 +9,45 @@
           variant="flat"
           class="me-2"
         >{{ riskLabel }}</v-chip>
-        <v-chip v-if="result.mock" color="warning" size="small" variant="tonal">MOCK</v-chip>
+        <v-chip v-if="result.mock" color="warning" size="small" variant="tonal" class="me-2">MOCK</v-chip>
+        <v-chip v-if="result.sourceHost" size="small" variant="tonal" color="primary" class="me-2">
+          {{ hostLabel(result.sourceHost) }}
+        </v-chip>
         <v-spacer />
         <span class="text-caption text-medium-emphasis">
           {{ result.modelUsed }} · {{ result.latencyMs }}ms
         </span>
       </div>
 
+      <div v-if="result.sourceTitle" class="text-body-2 text-medium-emphasis mb-2 text-truncate-2">
+        {{ result.sourceTitle }}
+      </div>
+
       <div class="text-h5 mb-1">{{ result.category || '無法辨識' }}</div>
       <div class="text-body-2 text-medium-emphasis mb-4">{{ result.era || '—' }}</div>
 
-      <div class="price-row">
+      <!-- URL 模式：掛牌 vs 估價 -->
+      <div v-if="result.listedPriceJpy != null" class="verdict-block mb-3">
+        <div class="d-flex align-baseline mb-2">
+          <div class="me-3">
+            <div class="text-caption text-medium-emphasis">賣家掛牌</div>
+            <div class="listed-price">¥{{ formatN(result.listedPriceJpy) }}</div>
+          </div>
+          <div class="verdict-arrow me-3">
+            <v-icon :color="verdictColor" size="24">{{ verdictIcon }}</v-icon>
+          </div>
+          <div>
+            <div class="text-caption text-medium-emphasis">合理區間</div>
+            <div class="range-price">¥{{ formatN(result.priceMinJpy) }}~¥{{ formatN(result.priceMaxJpy) }}</div>
+          </div>
+        </div>
+        <v-chip :color="verdictColor" variant="flat" size="small" :prepend-icon="verdictIcon">
+          {{ verdictLabel }}
+        </v-chip>
+      </div>
+
+      <!-- 純拍照：只顯示估價 -->
+      <div v-else class="price-row">
         <span class="price-yen">¥{{ formatN(result.priceMinJpy) }}</span>
         <span class="price-sep">~</span>
         <span class="price-yen">¥{{ formatN(result.priceMaxJpy) }}</span>
@@ -44,13 +72,41 @@
         density="compact"
         class="mt-4"
       >{{ result.notes }}</v-alert>
+
+      <!-- 動作列：源連結 + 收藏 -->
+      <div class="d-flex mt-4 ga-2">
+        <v-btn
+          v-if="result.sourceUrl"
+          variant="outlined"
+          size="small"
+          prepend-icon="mdi-open-in-new"
+          :href="result.sourceUrl"
+          target="_blank"
+          rel="noopener"
+        >看原頁</v-btn>
+        <v-spacer />
+        <v-btn
+          v-if="result.id"
+          :variant="result.isCollected ? 'flat' : 'outlined'"
+          size="small"
+          :color="result.isCollected ? 'warning' : undefined"
+          :prepend-icon="result.isCollected ? 'mdi-star' : 'mdi-star-outline'"
+          :loading="collecting"
+          @click="$emit('toggle-collect')"
+        >{{ result.isCollected ? '已收藏' : '收藏' }}</v-btn>
+      </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-const props = defineProps({ result: { type: Object, required: true } });
+
+const props = defineProps({
+  result: { type: Object, required: true },
+  collecting: { type: Boolean, default: false },
+});
+defineEmits(['toggle-collect']);
 
 const riskMap = {
   green: { color: 'success', icon: 'mdi-check-circle', label: '真品可能高', alert: 'success' },
@@ -70,6 +126,24 @@ const confColor = computed(() => {
   return 'error';
 });
 
+const VERDICT = {
+  low: { color: 'success', icon: 'mdi-arrow-down-bold', label: '撿漏機會（低於行情）' },
+  fair: { color: 'primary', icon: 'mdi-approximately-equal', label: '合理價（可入手）' },
+  high: { color: 'warning', icon: 'mdi-arrow-up-bold', label: '偏高（考慮殺價）' },
+  unknown: { color: 'grey', icon: 'mdi-help-circle', label: '無法判斷' },
+};
+const verdictColor = computed(() => VERDICT[props.result.priceVerdict]?.color || 'grey');
+const verdictIcon = computed(() => VERDICT[props.result.priceVerdict]?.icon || 'mdi-help-circle');
+const verdictLabel = computed(() => VERDICT[props.result.priceVerdict]?.label || '—');
+
+const HOST_LABEL = {
+  'jp.mercari.com': 'Mercari',
+  'mercari.com': 'Mercari',
+  'page.auctions.yahoo.co.jp': 'Yahoo Auction',
+  'fril.jp': 'Rakuma',
+};
+function hostLabel(host) { return HOST_LABEL[host] || host; }
+
 function formatN(n) {
   return n == null ? '—' : Number(n).toLocaleString();
 }
@@ -86,7 +160,30 @@ function formatN(n) {
   font-weight: 700;
   color: #795548;
 }
-.price-sep {
-  color: #999;
+.price-sep { color: #999; }
+.verdict-block {
+  background: rgba(121, 85, 72, 0.04);
+  border-radius: 8px;
+  padding: 12px;
+}
+.listed-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3E2723;
+}
+.range-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #795548;
+}
+.verdict-arrow {
+  align-self: flex-end;
+  padding-bottom: 4px;
+}
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

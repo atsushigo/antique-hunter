@@ -60,6 +60,43 @@ export const useAppraisalsStore = defineStore('appraisals', {
       }
     },
 
+    async submitUrl({ url, preview }) {
+      this.uploading = true;
+      this.lastError = null;
+
+      const localId = await enqueueAppraisal({
+        type: 'url',
+        thumbDataUrl: preview?.imageUrl || null,
+        sourceUrl: url,
+        sourcePreview: preview,
+        result: null,
+      });
+
+      try {
+        const { data } = await api.post('/appraisal/url', { url });
+        await updateAppraisal(localId, { status: 'done', result: data.data });
+        await this.loadLocal();
+        return localId;
+      } catch (err) {
+        await updateAppraisal(localId, { status: 'failed', error: err.message || 'url_appraisal_failed' });
+        this.lastError = err.message || 'url_appraisal_failed';
+        await this.loadLocal();
+        throw err;
+      } finally {
+        this.uploading = false;
+      }
+    },
+
+    async toggleCollect(localId) {
+      const entry = await this.getOne(localId);
+      if (!entry?.result?.id) return null;
+      const { data } = await api.post(`/appraisal/${entry.result.id}/collect`);
+      const merged = { ...entry, result: { ...entry.result, isCollected: data.data.isCollected } };
+      await updateAppraisal(Number(localId), merged);
+      await this.loadLocal();
+      return merged;
+    },
+
     async retryPending() {
       const pend = await pendingAppraisals();
       const results = [];

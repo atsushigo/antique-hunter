@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-08-01 by Sam × Claude session
 
-## 目前狀態：Phase 1 MVP + 日曆 view 完成 ✅
+## 目前狀態：Phase 1 MVP + 日曆 + Phase 2-1 URL 估價 + 收藏 ✅
 
 ## 已完成
 
@@ -29,6 +29,20 @@
 - ✅ Phase 1-11 `GET /api/events?from=&to=` + Pinia store + PWA cache
 - ✅ Phase 1-12 CalendarView（agenda 列表，可切 30/60/180 天）+ 底部 nav 加日曆 tab
 - ✅ Phase 1-13 和風 icon（桜家紋 on 米金圓，棕底）+ `npm run gen:icons`
+
+### Phase 2-1：URL 貼上估價（Mercari / Yahoo Auction / Rakuma）
+- ✅ `backend/url-fetch.js`：SSRF-safe（域名白名單 + HTTPS only + timeout + 大小限制），抓 og:image + og:title + og:description + JSON-LD Product price + ¥xxx 正則 fallback
+- ✅ `AppraisalLog` schema 加 source_url / source_title / source_host / listed_price_jpy / price_verdict / is_collected
+- ✅ `claude.js` 拆成 `appraise({mode, context})`，URL 模式 system prompt 判定 verdict（low=撿漏 / fair=合理 / high=偏高 / unknown）；mock 也對應
+- ✅ `POST /api/appraisal/url`、`POST /api/appraisal/url/preview`（純預覽不呼 Claude）
+- ✅ `UrlAppraisalView`：貼 URL → 預覽卡（縮圖+標題+掛牌價）→ 送 AI → 進 ResultView
+- ✅ `AppraisalResult` 支援 URL 模式：掛牌 ¥X → 合理區間 ¥Y-Z + verdict badge + 「看原頁」外連
+
+### Phase 2-2：收藏管理
+- ✅ `POST /api/appraisal/:id/collect` toggle + `GET /api/appraisal/collection`
+- ✅ ResultView 加 ★ 收藏按鈕；store 加 `toggleCollect`
+- ✅ `CollectionView`：列所有收藏，卡片顯示估價 + 掛牌 + verdict + 點卡片外連原頁
+- ✅ Home 新增「貼 URL 估價」次要按鈕 + 「市集日曆 / 收藏」快捷
 
 ## 目前可跑
 
@@ -65,10 +79,14 @@ cd frontend && npm install && npm run dev
 - iOS Safari「加入主畫面」測 PWA 桌面圖示（新 icon 生效）
 - 測拍照 flow：Home → 拍照 → 預覽 → 送出（mock 回應）
 
-## 下一步：Phase 2 藍圖
+## 下一步：Phase 2+ 藍圖
 
-- URL 貼上估價（Mercari / Yahoo Auction 爬蟲，需 Playwright）
-- 收藏管理 + 行情資料庫（PriceHistory model）
+- ~~URL 貼上估價~~ ✅ MVP 完成（不用 Playwright，SSR og tag 已夠 Mercari/Yahoo Auction/Rakuma）
+- ~~收藏管理~~ ✅ 基礎版完成
+- 行情資料庫（PriceHistory model — 追蹤同款物件價格變化，做趨勢圖）
+- Mercari 站內搜尋 API 整合（主動撈關鍵字新上架，不用貼 URL）
+- 假貨識別加強（Rolex 王冠 logo / 字體 專項 prompt）
+- Alert 推播（PWA push notification）
 - 管理後台（admin/ 用 Element Plus）
 - 部署到 Hetzner personal-02（Docker Compose 併入 stack）
 

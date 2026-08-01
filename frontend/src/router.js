@@ -20,6 +20,18 @@ const routes = [
     meta: { title: '市集日曆' },
   },
   {
+    path: '/url',
+    name: 'url',
+    component: () => import('./views/UrlAppraisalView.vue'),
+    meta: { title: 'URL 估價' },
+  },
+  {
+    path: '/collection',
+    name: 'collection',
+    component: () => import('./views/CollectionView.vue'),
+    meta: { title: '收藏' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),
