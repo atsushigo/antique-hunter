@@ -122,6 +122,16 @@ cd frontend && npm install && npm run dev
 - `AccountsView`：4 站 login 狀態卡 + 「顯示登入指令」+ 「清除本地 session」
 - `JimotyView`：收藏 grid + 訊息 list + thread dialog + 打稿送出 UI（送出前 warning「按送出前請再看一次」）
 - ⚠️ 自動送訊息 / 出價 / offer **不做**（scope 明確排除，避免誤操作）
+
+### Method A+ 補丁（實測後修正）
+- **stealth plugin**（`playwright-extra` + `puppeteer-extra-plugin-stealth`）— 隱藏 `navigator.webdriver` 等自動化痕跡；但實測 Jimoty 仍擋（多層 device fingerprint），保留為第一嘗試
+- **手動貼 cookie 兜底**：`POST /api/auth/paste/:site` 收 `Cookie:` header 字串，解析成 storageState 格式儲存；存前立刻 fetch statusUrl 驗證真的登入才留（否則 clearState）；AccountsView 加「手動貼 cookie」展開面板 + Chrome DevTools 教學
+- 每站 config 加 `cookieDomain`（jmty.jp / jp.mercari.com / fril.jp / yahoo.co.jp）
+- `loggedInWhen` 修正 — 原本 jimoty 只擋 `/login` 導致 `/users/sign_in` 誤判為登入成功、存了未認證的 cookie；改為 Rails Devise 完整 path 白名單
+- `statusUrl` 修正 — jimoty 沒有 `/my/mypage`（404），改用 `/my/posts` + marker `投稿管理|お気に入り`
+- Jimoty favorites parser 修正 — URL 相對路徑 + `car-*` category 前綴 + 標題在 `<span>` 而非 `alt` + 增加 `isSold`（受付終了）+ `category` + `region` 欄位
+- Jimoty search 掃 `/all/sale` + `/all/car` 兩個 URL（一併涵蓋物件與車輛，Sam 收藏含 13 台車）
+- searchSite 支援 site URL 為陣列，多 URL 抓取合併 + dedup
 - **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
 - **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
 - 假貨識別加強（Rolex 王冠/字體 專項 prompt）

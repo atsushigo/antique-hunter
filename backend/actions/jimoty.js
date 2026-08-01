@@ -50,24 +50,35 @@ export async function listFavorites() {
 function parseFavoritesHtml(html) {
   const items = [];
   const seen = new Set();
-  const anchorRe = /<a[^>]+href="(https:\/\/jmty\.jp\/[^"\/]+\/sale[^"\/]+\/article-[a-z0-9]+)"[^>]*>/gi;
+  // Jimoty 收藏頁：href 相對或絕對；category 前綴可為 sale-/car- 等
+  const anchorRe = /<a[^>]+href="(https:\/\/jmty\.jp)?(\/[^"\/]+\/[a-z]+-[^"\/]+\/article-[a-z0-9]+)"[^>]*>/gi;
   let m;
   while ((m = anchorRe.exec(html))) {
-    const href = m[1];
-    if (seen.has(href)) continue;
-    seen.add(href);
+    const path = m[2];
+    const full = `https://jmty.jp${path}`;
+    if (seen.has(full)) continue;
+    seen.add(full);
     const start = m.index;
     const close = html.indexOf('</a>', start);
-    const inner = close > 0 ? html.slice(start, close) : html.slice(start, start + 3000);
-    const outer = html.slice(start, start + 4000);
-    const imgM = inner.match(/<img[^>]+src="(https:\/\/cdn\.jmty\.jp\/articles\/images\/[^"]+)"/i);
-    const altM = inner.match(/alt="([^"]+)"/i);
-    const priceM = outer.match(/([\d,]+)\s*円/);
+    // 標題：anchor 內第一個 <span>...</span> 文字
+    const inner = close > 0 ? html.slice(start, close) : '';
+    const titleM = inner.match(/<span[^>]*>([^<]{2,120})<\/span>/);
+    // 價格 + 圖 + 狀態：往後找 2000 chars（同 row），往前 1500 chars（image 在上方兄弟）
+    const forward = html.slice(start, start + 2000);
+    const backward = html.slice(Math.max(0, start - 1500), start);
+    // image 通常在 anchor 前方（同一個 row 的圖片欄）
+    const imgM = backward.match(/<img[^>]+src="(https:\/\/cdn\.jmty\.jp\/articles\/images\/[^"]+)"[^>]*>(?![\s\S]*<img)/);
+    const priceM = forward.match(/([\d,]+)\s*円/);
+    const isSold = /受付終了|取引成立|募集終了/.test(backward + forward);
+
     items.push({
-      sourceUrl: href,
+      sourceUrl: full,
       imageUrl: imgM ? imgM[1] : null,
-      title: altM ? decodeHtml(altM[1]) : null,
+      title: titleM ? decodeHtml(titleM[1].trim()) : null,
       priceJpy: priceM ? Number(priceM[1].replace(/,/g, '')) : null,
+      category: path.match(/\/([a-z]+)-[^\/]+\//)?.[1] || null, // sale / car
+      region: path.match(/^\/([a-z]+)\//)?.[1] || null, // osaka / hyogo 等
+      isSold,
     });
   }
   return items;

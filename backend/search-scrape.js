@@ -26,8 +26,11 @@ export const ALL_SITES_META = [
 
 const SEARCH_URL = {
   yahoo_auction: (q) => `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(q)}&s1=new`,
-  jimoty: (q) => `https://jmty.jp/all/sale?keyword=${encodeURIComponent(q)}`,
-  // status=on_sale：Mercari 明確排除已售出
+  // Jimoty：/all/sale + /all/car 兩個都抓（物件 + 車輛都涵蓋）
+  jimoty: (q) => [
+    `https://jmty.jp/all/sale?keyword=${encodeURIComponent(q)}`,
+    `https://jmty.jp/all/car?keyword=${encodeURIComponent(q)}`,
+  ],
   mercari: (q) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(q)}&sort=created_time&order=desc&status=on_sale`,
   rakuma: (q) => `https://fril.jp/s?query=${encodeURIComponent(q)}`,
 };
@@ -85,15 +88,25 @@ export async function searchSite(site, keyword) {
   if (!SEARCH_SITES.includes(site)) {
     throw new ScrapeError('unsupported_site', site);
   }
-  const url = SEARCH_URL[site](keyword);
+  const urlOrList = SEARCH_URL[site](keyword);
+  const urls = Array.isArray(urlOrList) ? urlOrList : [urlOrList];
+
   if (HTTP_PARSERS[site]) {
-    const html = await fetchHtml(url);
-    const items = HTTP_PARSERS[site](html);
-    return { site, keyword, url, items };
+    const seen = new Set();
+    const items = [];
+    for (const u of urls) {
+      const html = await fetchHtml(u);
+      for (const it of HTTP_PARSERS[site](html)) {
+        if (!it.sourceUrl || seen.has(it.sourceUrl)) continue;
+        seen.add(it.sourceUrl);
+        items.push(it);
+      }
+    }
+    return { site, keyword, url: urls.join(' + '), items };
   }
   if (BROWSER_SCRAPERS[site]) {
-    const items = await BROWSER_SCRAPERS[site](url);
-    return { site, keyword, url, items };
+    const items = await BROWSER_SCRAPERS[site](urls[0]);
+    return { site, keyword, url: urls[0], items };
   }
   throw new ScrapeError('no_parser', site);
 }
@@ -135,35 +148,46 @@ function parseYahooAuction(html) {
 }
 
 // ---------- Jimoty ----------
+// 通用 parser：sale-* / car-* / 其他 category 都吃；含 absolute + relative URL
 function parseJimoty(html) {
   const items = [];
   const seen = new Set();
-  // Jimoty 商品連結：<a href="https://jmty.jp/{region}/sale-*/article-xxx">
-  const anchorRe = /<a[^>]+href="(https:\/\/jmty\.jp\/[^"\/]+\/sale[^"\/]+\/article-[a-z0-9]+)"[^>]*>/gi;
+  const anchorRe = /<a[^>]+href="(https:\/\/jmty\.jp)?(\/[^"\/]+\/[a-z]+-[^"\/]+\/article-[a-z0-9]+)"[^>]*>/gi;
   let m;
   while ((m = anchorRe.exec(html))) {
-    const href = m[1];
-    if (seen.has(href)) continue;
-    seen.add(href);
+    const path = m[2];
+    const full = `https://jmty.jp${path}`;
+    if (seen.has(full)) continue;
+    seen.add(full);
 
-    // 從 anchor 往後：抓 img/alt 用 <a>..</a> 內容；抓 price 用更大範圍（卡片外殼常在 </a> 之後）
     const start = m.index;
     const close = html.indexOf('</a>', start);
     const innerBlock = close > 0 ? html.slice(start, close) : html.slice(start, start + 3000);
-    const priceBlock = html.slice(start, start + 3000); // 含 </a> 之後的價格區
+    const priceBlock = html.slice(start, start + 4000);
 
-    // 過濾已售出/募集終了
     if (SOLD_PATTERNS.test(priceBlock)) continue;
 
-    const imgMatch = innerBlock.match(/<img[^>]+src="(https:\/\/cdn\.jmty\.jp\/articles\/images\/[^"]+)"/i);
-    const image = imgMatch ? imgMatch[1] : null;
-    const alt = matchAttr(innerBlock, 'alt');
+    // 圖：inner 或 forward 都掃
+    const imgMatch = (innerBlock + priceBlock).match(/<img[^>]+src="(https:\/\/cdn\.jmty\.jp\/articles\/images\/[^"]+)"/i);
+    // 標題：img alt 優先；否則 anchor 內 text；否則後段 p-item-title 內文字
+    let title = matchAttr(innerBlock, 'alt');
+    if (!title) {
+      const spanM = innerBlock.match(/<[^>]+>([^<]{3,120})</);
+      if (spanM) title = spanM[1];
+    }
+    if (!title) {
+      const titleAnchor = priceBlock.match(/class=['"]p-item-title['"][\s\S]{0,50}?<a[^>]*>([^<]{3,120})</);
+      if (titleAnchor) title = titleAnchor[1];
+    }
 
+    // 價格：優先找 <b>XX,XXX円</b>（車頁）、再退 XX,XXX 円
     let priceJpy = null;
     let priceLabel = null;
-    const priceM = priceBlock.match(/([\d,]+)\s*円/);
-    if (priceM) {
-      const n = Number(priceM[1].replace(/,/g, ''));
+    const boldPriceM = priceBlock.match(/<b>([\d,]+)\s*円<\/b>/);
+    const anyPriceM = priceBlock.match(/([\d,]+)\s*円/);
+    const pm = boldPriceM || anyPriceM;
+    if (pm) {
+      const n = Number(pm[1].replace(/,/g, ''));
       if (Number.isFinite(n) && n < 100_000_000) priceJpy = n;
     } else if (/無料/.test(priceBlock)) {
       priceJpy = 0;
@@ -171,9 +195,9 @@ function parseJimoty(html) {
     }
 
     items.push({
-      sourceUrl: href,
-      imageUrl: image,
-      title: alt ? decodeHtml(alt).trim().slice(0, 200) : null,
+      sourceUrl: full,
+      imageUrl: imgMatch ? imgMatch[1] : null,
+      title: title ? decodeHtml(title).trim().slice(0, 200) : null,
       priceJpy,
       priceLabel,
       raw: null,
