@@ -145,14 +145,38 @@
             prepend-icon="mdi-play"
             @click="runNow(kw)"
           >馬上跑一次</v-btn>
-          <v-spacer />
           <v-btn
             size="x-small"
             variant="text"
-            color="error"
-            @click="remove(kw)"
-          >刪除</v-btn>
+            prepend-icon="mdi-filter-minus"
+            @click="excludeOpen[kw.id] = !excludeOpen[kw.id]; excludeDraft[kw.id] = kw.excludeKeywords"
+          >排除詞 ({{ (kw.excludeKeywords || '').split(/[,、\s]+/).filter(Boolean).length }})</v-btn>
+          <v-spacer />
+          <v-btn size="x-small" variant="text" color="error" @click="remove(kw)">刪除</v-btn>
         </div>
+
+        <v-expand-transition>
+          <div v-if="excludeOpen[kw.id]" class="mt-3">
+            <div class="text-caption text-medium-emphasis mb-1">
+              Title 含以下任一詞的 listing 會被跳過（空白或逗號分隔）：
+            </div>
+            <v-textarea
+              v-model="excludeDraft[kw.id]"
+              variant="outlined"
+              density="compact"
+              rows="2"
+              auto-grow
+              placeholder="例：カタログ トミカ ミニカー 純正 部品 タイヤ ホイール"
+              hide-details
+            />
+            <div class="d-flex mt-2 ga-2">
+              <v-btn size="x-small" variant="text" @click="excludeOpen[kw.id] = false">取消</v-btn>
+              <v-spacer />
+              <v-btn size="x-small" variant="tonal" @click="applyCarDefaults(kw)">套用「車輛」預設</v-btn>
+              <v-btn size="small" color="primary" @click="saveExclude(kw)">存</v-btn>
+            </div>
+          </div>
+        </v-expand-transition>
       </v-card-text>
     </v-card>
   </v-container>
@@ -167,6 +191,22 @@ const newKw = ref('');
 const newSites = ref(['yahoo_auction', 'jimoty']);
 const running = reactive(new Set());
 const adding = ref(false);
+const excludeOpen = reactive({});
+const excludeDraft = reactive({});
+
+const CAR_DEFAULTS = 'カタログ トミカ ミニカー プラモ フィギュア スピーカー ラジエーター ホイール タイヤ シート ガスケット コントロールユニット マニホールド バンパー ミラー パネル ドア ライト マフラー ブレーキ クラッチ オイル 部品 純正 中古品 腕時計 時計 ケース カフス ペンダント 封筒 冊子 カード ギター エレキ';
+
+async function saveExclude(kw) {
+  await store.update(kw.id, { excludeKeywords: excludeDraft[kw.id] || '' });
+  excludeOpen[kw.id] = false;
+  snackText.value = `「${kw.keyword}」排除詞已更新`;
+  snackColor.value = 'success';
+  snackbar.value = true;
+}
+
+function applyCarDefaults(kw) {
+  excludeDraft[kw.id] = CAR_DEFAULTS;
+}
 const snackbar = ref(false);
 const snackText = ref('');
 const snackColor = ref('success');

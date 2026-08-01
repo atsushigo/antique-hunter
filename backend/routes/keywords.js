@@ -15,6 +15,7 @@ function serialize(kw) {
     isActive: kw.isActive,
     lastRunAt: kw.lastRunAt,
     lastError: kw.lastError,
+    excludeKeywords: kw.excludeKeywords || '',
     createdAt: kw.createdAt,
   };
 }
@@ -62,6 +63,9 @@ keywordsRouter.patch('/:id', async (req, res, next) => {
       if (filtered.length) kw.sites = filtered.join(',');
     }
     if (typeof req.body?.isActive === 'boolean') kw.isActive = req.body.isActive;
+    if (typeof req.body?.excludeKeywords === 'string') {
+      kw.excludeKeywords = req.body.excludeKeywords.slice(0, 500);
+    }
     await kw.save();
     res.json({ data: serialize(kw) });
   } catch (err) { next(err); }
@@ -108,13 +112,17 @@ keywordsRouter.get('/inbox', async (req, res, next) => {
       include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
     });
 
-    const listings = await TrackedListing.findAll({
+    // 分頁時同步 apply 排除詞 filter（keyword.excludeArray）
+    // 為簡單起見：多抓一些後 JS 過濾（因每 keyword 排除詞短）
+    const overFetch = Math.min(500, limit * 4);
+    const raw = await TrackedListing.findAll({
       where,
       include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
       order: [['first_seen_at', 'DESC']],
-      limit,
+      limit: overFetch,
       offset,
     });
+    const listings = raw.filter((l) => !l.keyword?.isExcluded(l.title)).slice(0, limit);
 
     // 每個 active keyword 的 count（給 UI 篩選 chip 顯示）
     const perKeyword = await TrackedListing.findAll({
@@ -173,6 +181,7 @@ export async function runKeyword(kw) {
       let newCount = 0;
       for (const item of items) {
         if (!item.sourceUrl) continue;
+        if (kw.isExcluded(item.title)) continue; // 排除詞過濾
         const [row, created] = await TrackedListing.findOrCreate({
           where: { keywordId: kw.id, sourceUrl: item.sourceUrl },
           defaults: {
