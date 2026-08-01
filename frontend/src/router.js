@@ -14,6 +14,12 @@ const routes = [
     meta: { title: '市集情報' },
   },
   {
+    path: '/calendar',
+    name: 'calendar',
+    component: () => import('./views/CalendarView.vue'),
+    meta: { title: '市集日曆' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),

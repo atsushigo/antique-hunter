@@ -1,8 +1,8 @@
 # antique-hunter STATUS
 
-**Last updated:** 2026-07-31 by Sam × Claude session
+**Last updated:** 2026-08-01 by Sam × Claude session
 
-## 目前狀態：Phase 1 MVP 完成 ✅
+## 目前狀態：Phase 1 MVP + 日曆 view 完成 ✅
 
 ## 已完成
 
@@ -24,6 +24,11 @@
 - ✅ Phase 1-5 Frontend 骨架：Vue 3 + Vuetify + Pinia + Router + axios + idb（commit `12bb3b3`）
 - ✅ Phase 1-6+7 Views + Pinia Stores + IndexedDB 離線 queue（commit `500509a`）
 - ✅ Phase 1-8 PWA 配置：manifest + Service Worker + icons（commit `1beae57`）
+- ✅ Phase 1-9 資料擴充 9 → 18 筆市集（含 東寺弘法市 1,200 攤、平安蚤の市 具體日期、万博蚤の市 春秋、関西蚤の市、四天会、十三市、北野天神市 等）
+- ✅ Phase 1-10 `MarketEvent` 表 + seeder（規則型市集展開 12 個月 = 161 場活動）
+- ✅ Phase 1-11 `GET /api/events?from=&to=` + Pinia store + PWA cache
+- ✅ Phase 1-12 CalendarView（agenda 列表，可切 30/60/180 天）+ 底部 nav 加日曆 tab
+- ✅ Phase 1-13 和風 icon（桜家紋 on 米金圓，棕底）+ `npm run gen:icons`
 
 ## 目前可跑
 
@@ -45,16 +50,19 @@ cd frontend && npm install && npm run dev
 - **待 Sam 申請**（https://console.anthropic.com）
 - 加到 `backend/.env` `ANTHROPIC_API_KEY=sk-ant-xxxxx` 後即可切真 API
 
-### 2. 資料源補齊（9 筆 → 更多）
-- 神戶蚤の市、奈良蚤の市目前資料稀薄
-- STATUS 原稱 16 筆，需再爬 antique-leaves.com 補齊
+### 2. 資料源補齊
+- ✅ 已補：18 筆市集 + 161 場 12 個月活動
+- 待補：神戸蚤の市（官網不可達，schedule 空著）→ 有下次日期時手動 insert 到 `market_events`
+- 待補：Sutekia 宝塚、神戸三宮アンティークフェア 官方年度日程
 
 ### 3. Icon 品牌化
-- 目前 icon 是放大鏡 placeholder（棕底 + 米金），Sam 可以之後換
+- ✅ 已改：桜家紋（五瓣）on 米金雙圈 + 棕底（`frontend/public/icons/source.svg`）
+- 想換：改 SVG 後 `cd backend && npm run gen:icons`
 
-### 4. 手機實測
-- 建議 Sam 用手機連 `http://<Mac 內網 IP>:5173` 測拍照 flow
-- iOS Safari「加入主畫面」測 PWA 桌面圖示
+### 4. 手機實測（Sam 待做）
+- 內網 URL：`http://192.168.0.2:5173`（or Tailscale：`http://100.90.160.114:5173`）
+- iOS Safari「加入主畫面」測 PWA 桌面圖示（新 icon 生效）
+- 測拍照 flow：Home → 拍照 → 預覽 → 送出（mock 回應）
 
 ## 下一步：Phase 2 藍圖
 

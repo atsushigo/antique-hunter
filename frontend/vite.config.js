@@ -37,6 +37,14 @@ export default defineConfig({
               expiration: { maxAgeSeconds: 60 * 60 * 24 },
             },
           },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/events'),
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'api-events',
+              expiration: { maxAgeSeconds: 60 * 60 * 6 },
+            },
+          },
         ],
       },
     }),

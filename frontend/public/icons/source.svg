@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 深棕背景（maskable safe zone 全滿） -->
+  <rect width="512" height="512" fill="#5D4037"/>
+
+  <!-- 米金色外圈（家紋框） -->
+  <circle cx="256" cy="256" r="196" fill="#F5E6C8"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#8D6E63" stroke-width="6"/>
+  <!-- 內細圈（雙圈家紋典型結構） -->
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#8D6E63" stroke-width="2" opacity="0.6"/>
+
+  <!-- 五瓣桜家紋（居中） -->
+  <g transform="translate(256 256)" fill="#5D4037">
+    <defs>
+      <path id="ah-petal" d="M0,-118 C-50,-108 -58,-58 -32,-22 C-16,-6 0,-14 0,-14 C0,-14 16,-6 32,-22 C58,-58 50,-108 0,-118 Z"/>
+    </defs>
+    <use href="#ah-petal"/>
+    <use href="#ah-petal" transform="rotate(72)"/>
+    <use href="#ah-petal" transform="rotate(144)"/>
+    <use href="#ah-petal" transform="rotate(216)"/>
+    <use href="#ah-petal" transform="rotate(288)"/>
+    <!-- 中心蕊點 -->
+    <circle r="16" fill="#C9A165"/>
+    <circle r="8" fill="#5D4037"/>
+  </g>
+</svg>
