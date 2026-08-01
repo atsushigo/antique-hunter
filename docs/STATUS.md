@@ -46,7 +46,10 @@
 - ✅ Home 新增「貼 URL 估價」次要按鈕 + 「市集日曆 / 收藏」快捷
 
 ### Phase 3：追蹤 + 即時搜尋 + 歷史統計（**主動撈 + 事後分析**）
-- ✅ `search-scrape.js`：Yahoo Auction + Jimoty SSR HTML 爬取（Mercari 是 SPA，需 Playwright 才能爬 search，暫不支援；URL 貼上估價仍支援 Mercari）
+- ✅ `search-scrape.js`：4 站全支援
+  - Yahoo Auction + Jimoty：SSR HTML，純 HTTP 抓取（~1-2 秒）
+  - Mercari + Rakuma：SPA，走 **Playwright headless chromium**（`browser.js` singleton，~5-15 秒）
+  - 4 站全跑實測 165 筆 / 19 秒
 - ✅ `SearchKeyword` + `TrackedListing` schema + dedup（unique index on `keyword_id + source_url`）
 - ✅ `POST/GET/PATCH/DELETE /api/keywords`、`POST /api/keywords/:id/run`（手動觸發）
 - ✅ `GET /api/keywords/inbox?days=N`、`POST /api/keywords/inbox/:id/dismiss`
@@ -101,7 +104,8 @@ cd frontend && npm install && npm run dev
 - ~~關鍵字 alert（in-app inbox 版）~~ ✅
 - ~~即時搜尋（Yahoo Auction + Jimoty）~~ ✅
 - ~~鑑定歷史 + 統計~~ ✅
-- **Mercari SPA 爬取**（要加 Playwright，~400MB browser download）
+- ~~Mercari SPA 爬取~~ ✅ Playwright 掛好
+- ~~Rakuma parser~~ ✅ 走 Playwright（原本以為 SSR，實測也是 SPA）
 - **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
 - **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
 - 假貨識別加強（Rolex 王冠/字體 專項 prompt）

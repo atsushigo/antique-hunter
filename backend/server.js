@@ -12,6 +12,7 @@ import { eventsRouter } from './routes/events.js';
 import { keywordsRouter } from './routes/keywords.js';
 import { searchRouter } from './routes/search.js';
 import { startCron } from './cron.js';
+import { closeBrowser } from './browser.js';
 import './models/MarketEvent.js';
 import './models/TrackedListing.js';
 
@@ -80,3 +81,11 @@ start().catch((err) => {
   console.error('[fatal]', err);
   process.exit(1);
 });
+
+async function shutdown(sig) {
+  console.log(`[shutdown] ${sig}`);
+  try { await closeBrowser(); } catch {}
+  process.exit(0);
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
