@@ -9,7 +9,9 @@ const UA =
 const TIMEOUT_MS = 15_000;
 const MAX_BYTES = 4 * 1024 * 1024;
 
-export const SEARCH_SITES = ['yahoo_auction', 'jimoty', 'mercari', 'rakuma'];
+// 站內搜尋只啟用 SSR 站別（純 HTTP 快）；Mercari/Rakuma 是 SPA 要 Playwright，效能考量停用
+// URL 貼上估價仍支援 4 站（那走 og:tag 純 HTTP，不需 Playwright）
+export const SEARCH_SITES = ['yahoo_auction', 'jimoty'];
 export const SITE_LABELS = {
   yahoo_auction: 'Yahoo Auction',
   jimoty: 'Jimoty',
@@ -20,8 +22,18 @@ export const SITE_LABELS = {
 export const ALL_SITES_META = [
   { id: 'yahoo_auction', label: 'Yahoo Auction', supported: true },
   { id: 'jimoty', label: 'Jimoty', supported: true },
-  { id: 'mercari', label: 'Mercari', supported: true, note: '走 Playwright，較慢（10-15 秒）' },
-  { id: 'rakuma', label: 'Rakuma', supported: true, note: '走 Playwright，較慢' },
+  {
+    id: 'mercari',
+    label: 'Mercari',
+    supported: false,
+    reason: '站內搜尋需 Playwright（SPA），效能考量停用。URL 貼上估價仍可用。',
+  },
+  {
+    id: 'rakuma',
+    label: 'Rakuma',
+    supported: false,
+    reason: '站內搜尋需 Playwright（SPA），效能考量停用。URL 貼上估價仍可用。',
+  },
 ];
 
 const SEARCH_URL = {
