@@ -21,6 +21,12 @@ AppraisalLog.init(
     modelUsed: { type: DataTypes.STRING, field: 'model_used' },
     latencyMs: { type: DataTypes.INTEGER, field: 'latency_ms' },
     mock: { type: DataTypes.BOOLEAN, defaultValue: false },
+    sourceUrl: { type: DataTypes.STRING, field: 'source_url' },
+    sourceTitle: { type: DataTypes.STRING, field: 'source_title' },
+    sourceHost: { type: DataTypes.STRING, field: 'source_host' },
+    listedPriceJpy: { type: DataTypes.INTEGER, field: 'listed_price_jpy' },
+    priceVerdict: { type: DataTypes.STRING(16), field: 'price_verdict' },
+    isCollected: { type: DataTypes.BOOLEAN, field: 'is_collected', defaultValue: false, allowNull: false },
   },
   {
     sequelize,
