@@ -56,6 +56,18 @@ const routes = [
     meta: { title: '鑑定歷史' },
   },
   {
+    path: '/accounts',
+    name: 'accounts',
+    component: () => import('./views/AccountsView.vue'),
+    meta: { title: '帳號連接' },
+  },
+  {
+    path: '/jimoty',
+    name: 'jimoty',
+    component: () => import('./views/JimotyView.vue'),
+    meta: { title: '我的 Jimoty' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),

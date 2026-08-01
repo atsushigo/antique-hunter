@@ -11,6 +11,8 @@ import { appraisalRouter } from './routes/appraisal.js';
 import { eventsRouter } from './routes/events.js';
 import { keywordsRouter } from './routes/keywords.js';
 import { searchRouter } from './routes/search.js';
+import { authRouter } from './routes/auth.js';
+import { jimotyRouter } from './routes/jimoty.js';
 import { startCron } from './cron.js';
 import { closeBrowser } from './browser.js';
 import './models/MarketEvent.js';
@@ -40,6 +42,8 @@ app.use('/api/events', eventsRouter);
 app.use('/api/appraisal', appraisalRouter);
 app.use('/api/keywords', keywordsRouter);
 app.use('/api/search', searchRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/jimoty', jimotyRouter);
 
 app.get('/api/health', async (req, res) => {
   let db = 'ok';

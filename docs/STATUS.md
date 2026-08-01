@@ -110,6 +110,18 @@ cd frontend && npm install && npm run dev
 - ~~PriceHistory 趨勢~~ ✅ `price_snapshots` 表 + 智慧 dedup（24h 內同價不重複）；`runKeyword` 每筆 log、`POST /appraisal/url` 也 log；`GET /appraisal/price-history?url=` + `Sparkline.vue` 純 SVG 迷你圖表（漲=紅、跌=綠），AppraisalResult URL 模式秀「近 60 天價格歷史」
 - ~~價格 filter + 排序~~ ✅ Inbox / Search / History 加預設價格 chip（全部/免費/¥1k/¥3k/¥1萬/¥3萬）+ 排序 toggle（新↓/便宜↑/貴↓）；共用 `composables/priceFilter.js`
 - ~~已售出過濾~~ ✅ Mercari URL 加 `status=on_sale` param；4 個 parser 都偵測 sold marker（SOLD OUT ribbon / 売切 / 取引済 / 落札済 / 終了）自動略過
+
+### 帳號連接（Method A+：無痕登入 + cookie 儲存）
+- 通用 `auth/sites.js` — 4 站別 config（loginUrl / loggedInWhen / statusUrl / loggedInMarker）
+- `auth/session-store.js` — 存 Playwright storageState 到 `backend/data/sessions/{site}.json`（gitignored via `backend/data/`）；`toCookieHeader` 給 fetch 用；`checkStatus` 打 statusUrl 驗 session 還活著
+- `scripts/auth-login.mjs` — **極短（<60 行）刻意可讀**：開 chromium headed + 全新 context（等同無痕）→ 跳登入頁 → Sam 手動輸密碼 → `waitForURL` 偵測登入成功 → `context.storageState({path})` 存 cookie → 關掉。**沒有 page.type / page.evaluate / screenshot 碰密碼欄位**
+- `npm run auth:login <site>` 觸發
+- `actions/jimoty.js`：`listFavorites` / `listThreads` / `getThread` / `replyThread`（fetch + Cookie header + CSRF token 解析），SessionExpired 錯誤自動吐 401
+- `routes/auth.js`：`GET /api/auth/status`、`DELETE /api/auth/session/:site`
+- `routes/jimoty.js`：`GET /favorites`、`/messages`、`/messages/:id`、`POST /messages/:id/reply`、`/raw?path=` debug
+- `AccountsView`：4 站 login 狀態卡 + 「顯示登入指令」+ 「清除本地 session」
+- `JimotyView`：收藏 grid + 訊息 list + thread dialog + 打稿送出 UI（送出前 warning「按送出前請再看一次」）
+- ⚠️ 自動送訊息 / 出價 / offer **不做**（scope 明確排除，避免誤操作）
 - **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
 - **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
 - 假貨識別加強（Rolex 王冠/字體 專項 prompt）
