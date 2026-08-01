@@ -11,6 +11,10 @@
         @click="load"
       />
       <v-spacer />
+      <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" variant="outlined" class="me-2">
+        <v-btn value="card" size="x-small" icon="mdi-view-grid" />
+        <v-btn value="list" size="x-small" icon="mdi-view-list" />
+      </v-btn-toggle>
       <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
         <v-btn :value="1" size="x-small">今日</v-btn>
         <v-btn :value="3" size="x-small">3 天</v-btn>
@@ -82,7 +86,8 @@
       篩選後無結果 — 試試放寬價格條件
     </div>
 
-    <div class="list">
+    <!-- List mode -->
+    <div v-if="viewMode === 'list'" class="list">
       <div
         v-for="item in filtered"
         :key="item.id"
@@ -116,33 +121,61 @@
           </div>
         </div>
         <div class="actions" @click.stop>
-          <v-btn
-            size="x-small"
-            variant="tonal"
-            icon="mdi-magic-staff"
-            :loading="appraising === item.id"
-            @click="onAppraise(item)"
-          />
-          <v-btn
-            size="x-small"
-            variant="text"
-            icon="mdi-close"
-            @click="onDismiss(item)"
-          />
+          <v-btn size="x-small" variant="tonal" icon="mdi-magic-staff" :loading="appraising === item.id" @click="onAppraise(item)" />
+          <v-btn size="x-small" variant="text" icon="mdi-close" @click="onDismiss(item)" />
         </div>
       </div>
     </div>
 
-    <!-- Load more -->
-    <div v-if="pagination?.hasMore" class="text-center mt-4">
-      <v-btn
-        variant="tonal"
-        color="primary"
-        :loading="loadingMore"
-        @click="loadMore"
+    <!-- Card mode (multi-col grid, 圖片可見) -->
+    <div v-else class="cards">
+      <div
+        v-for="item in filtered"
+        :key="item.id"
+        class="card"
+        @click="onAppraise(item)"
       >
-        載入更多（還有 {{ pagination.total - store.inbox.length }} 筆）
-      </v-btn>
+        <div class="card-img-wrap">
+          <v-img v-if="item.imageUrl" :src="item.imageUrl" cover class="card-img" />
+          <div v-else class="card-img no-img d-flex align-center justify-center">
+            <v-icon color="grey">mdi-image-off</v-icon>
+          </div>
+          <div class="card-price-overlay">
+            <span v-if="item.priceJpy === 0 && item.priceLabel">{{ item.priceLabel }}</span>
+            <span v-else-if="item.priceJpy != null">¥{{ item.priceJpy.toLocaleString() }}</span>
+            <span v-else>—</span>
+          </div>
+          <v-btn
+            class="card-dismiss"
+            size="x-small"
+            variant="flat"
+            icon="mdi-close"
+            @click.stop="onDismiss(item)"
+          />
+        </div>
+        <div class="card-body">
+          <div class="card-title">{{ item.title || '(無標題)' }}</div>
+          <div class="card-meta">
+            <span class="site">{{ item.siteLabel }}</span>
+            <span class="sep">·</span>
+            <span>🔍 {{ item.keyword }}</span>
+            <span class="sep">·</span>
+            <span>{{ formatRelative(item.firstSeenAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="pagination && pagination.total > pageSize" class="d-flex justify-center mt-4">
+      <v-pagination
+        v-model="page"
+        :length="totalPages"
+        :total-visible="6"
+        density="comfortable"
+        rounded
+        color="primary"
+      />
     </div>
   </v-container>
 </template>
@@ -159,16 +192,19 @@ const store = useKeywordsStore();
 const appraisals = useAppraisalsStore();
 const days = ref(3);
 const loading = ref(false);
-const loadingMore = ref(false);
 const appraising = ref(null);
 const priceBucket = ref('all');
 const sortBy = ref('new');
 const keywordFilter = ref(null);
-const pageSize = 50;
+const pageSize = 24; // 每頁 24 筆（card view 剛好整齊）
+const page = ref(1);
+const viewMode = ref(localStorage.getItem('inbox-view-mode') || 'card');
+watch(viewMode, (v) => localStorage.setItem('inbox-view-mode', v));
 
 const inboxList = computed(() => store.inbox);
 const filtered = useFilteredSorted(inboxList, priceBucket, sortBy, 'firstSeenAt');
 const pagination = computed(() => store.inboxPagination);
+const totalPages = computed(() => Math.ceil((pagination.value?.total || 0) / pageSize));
 const keywordChips = computed(() =>
   Object.entries(store.inboxPerKeyword || {})
     .sort((a, b) => b[1] - a[1])
@@ -182,30 +218,25 @@ async function load() {
       days: days.value,
       keyword: keywordFilter.value,
       limit: pageSize,
-      offset: 0,
+      offset: (page.value - 1) * pageSize,
       force: true,
     });
   } finally { loading.value = false; }
 }
 
-async function loadMore() {
-  if (!pagination.value?.hasMore) return;
-  loadingMore.value = true;
-  try {
-    await store.fetchInbox({
-      days: days.value,
-      keyword: keywordFilter.value,
-      limit: pageSize,
-      offset: store.inbox.length,
-      append: true,
-      force: true,
-    });
-  } finally { loadingMore.value = false; }
-}
-
 function setKeywordFilter(name) {
   keywordFilter.value = name;
+  page.value = 1; // 換 keyword 回第 1 頁
 }
+
+watch(page, () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  load();
+});
+watch([days, keywordFilter], () => {
+  page.value = 1;
+  load();
+});
 
 async function onAppraise(item) {
   appraising.value = item.id;
@@ -242,7 +273,6 @@ function formatRelative(iso) {
 }
 
 onMounted(load);
-watch([days, keywordFilter], load);
 </script>
 
 <style scoped>
@@ -324,5 +354,96 @@ watch([days, keywordFilter], load);
   display: flex;
   gap: 2px;
   flex-shrink: 0;
+}
+
+/* --- Card mode --- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 600px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .cards { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1264px) {
+  .cards { grid-template-columns: repeat(5, 1fr); }
+}
+.card {
+  background: #FDFBF7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  display: flex;
+  flex-direction: column;
+}
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.card-img-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.card-img {
+  width: 100%;
+  height: 100%;
+}
+.card-price-overlay {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #FFE082;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+.card-dismiss {
+  position: absolute !important;
+  right: 2px;
+  top: 2px;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+  opacity: 0.7;
+}
+.card-dismiss:hover { opacity: 1; }
+.card-body {
+  padding: 6px 8px 8px;
+  flex: 1;
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3E2723;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 32px;
+}
+.card-meta {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 4px;
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  white-space: nowrap;
+}
+.card-meta .site {
+  color: rgb(var(--v-theme-primary));
+  font-weight: 500;
+}
+.card-meta .sep {
+  opacity: 0.4;
 }
 </style>
