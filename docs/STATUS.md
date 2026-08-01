@@ -51,9 +51,10 @@ cd frontend && npm install && npm run dev
 - 加到 `backend/.env` `ANTHROPIC_API_KEY=sk-ant-xxxxx` 後即可切真 API
 
 ### 2. 資料源補齊
-- ✅ 已補：18 筆市集 + 161 場 12 個月活動
-- 待補：神戸蚤の市（官網不可達，schedule 空著）→ 有下次日期時手動 insert 到 `market_events`
-- 待補：Sutekia 宝塚、神戸三宮アンティークフェア 官方年度日程
+- ✅ 已補：18 筆市集 + 182 場 12 個月活動
+- ✅ 已補：神戸三宮アンティークフェア（年 3 回，さんちかホール 20+ 攤，免費鑑定）
+- ✅ 已補：Sutekia Market 宝塚（宝塚市立文化芸術センター 40-50 攤）
+- ✅ 已補：神戸蚤の市（元町 4 丁目商店街 34 攤，年 1-2 回 pop-up）— 但下次日期未公告，追 IG「神戸蚤の市 | KOBE NOMINOICHI」看新場次
 
 ### 3. Icon 品牌化
 - ✅ 已改：桜家紋（五瓣）on 米金雙圈 + 棕底（`frontend/public/icons/source.svg`）
