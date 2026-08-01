@@ -122,7 +122,16 @@ keywordsRouter.get('/inbox', async (req, res, next) => {
       limit: overFetch,
       offset,
     });
-    const listings = raw.filter((l) => !l.keyword?.isExcluded(l.title)).slice(0, limit);
+    const listings = raw
+      .filter((l) => {
+        if (!l.keyword) return false;
+        // 排除詞
+        if (l.keyword.isExcluded(l.title)) return false;
+        // title 必須含 keyword（防 description-only match）
+        if (l.title && !l.title.toLowerCase().includes(l.keyword.keyword.toLowerCase())) return false;
+        return true;
+      })
+      .slice(0, limit);
 
     // 每個 active keyword 的 count（給 UI 篩選 chip 顯示）
     const perKeyword = await TrackedListing.findAll({
@@ -179,9 +188,12 @@ export async function runKeyword(kw) {
     try {
       const { items } = await searchSite(site, kw.keyword);
       let newCount = 0;
+      const kwLower = kw.keyword.toLowerCase();
       for (const item of items) {
         if (!item.sourceUrl) continue;
-        if (kw.isExcluded(item.title)) continue; // 排除詞過濾
+        // 過濾：title 存在但不含 keyword（Jimoty 搜 description 常回不相關項）
+        if (item.title && !item.title.toLowerCase().includes(kwLower)) continue;
+        if (kw.isExcluded(item.title)) continue;
         const [row, created] = await TrackedListing.findOrCreate({
           where: { keywordId: kw.id, sourceUrl: item.sourceUrl },
           defaults: {

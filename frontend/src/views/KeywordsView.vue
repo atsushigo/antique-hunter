@@ -194,7 +194,24 @@ const adding = ref(false);
 const excludeOpen = reactive({});
 const excludeDraft = reactive({});
 
-const CAR_DEFAULTS = 'カタログ トミカ ミニカー プラモ フィギュア スピーカー ラジエーター ホイール タイヤ シート ガスケット コントロールユニット マニホールド バンパー ミラー パネル ドア ライト マフラー ブレーキ クラッチ オイル 部品 純正 中古品 腕時計 時計 ケース カフス ペンダント 封筒 冊子 カード ギター エレキ';
+const CAR_DEFAULTS = [
+  // 基本零件
+  'カタログ トミカ ミニカー プラモ フィギュア',
+  'スピーカー ラジエーター ホイール タイヤ シート ガスケット',
+  'コントロールユニット マニホールド バンパー ミラー パネル ドア ライト',
+  'マフラー ブレーキ クラッチ オイル',
+  // 額外零件/雜物
+  'グリル フロントグリル ラジエータグリル グリルマーカー',
+  'スパーク プラグ センサー コイル バルブ ポンプ フィルター バッテリー',
+  'エンブレム ロゴ ワッペン ステッカー フィルム',
+  'ハーネス ワイヤー ケーブル モール カバー ワイパー フォグ',
+  '部品 純正 中古品 サービスマニュアル 訳あり ジャンク パーツ 部品取り',
+  '空気入れ 電動ポンプ',
+  // 非車類（Rolex Explorer 手錶、Gibson Explorer 吉他等）
+  '腕時計 時計 ケース カフス ペンダント 封筒 冊子 カード',
+  'ギター エレキ Epiphone Gibson Fender エレキギター',
+  'INTEX GLOBBER トライク QUARTORIGO マイク ミキサー アンプ ピック 弦',
+].join(' ');
 
 async function saveExclude(kw) {
   await store.update(kw.id, { excludeKeywords: excludeDraft[kw.id] || '' });
