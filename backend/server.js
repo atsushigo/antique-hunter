@@ -8,6 +8,8 @@ import { config, isDev } from './config.js';
 import { connect, sequelize } from './db.js';
 import { marketsRouter } from './routes/markets.js';
 import { appraisalRouter } from './routes/appraisal.js';
+import { eventsRouter } from './routes/events.js';
+import './models/MarketEvent.js';
 
 const app = express();
 
@@ -28,6 +30,7 @@ app.use(
 );
 
 app.use('/api/markets', marketsRouter);
+app.use('/api/events', eventsRouter);
 app.use('/api/appraisal', appraisalRouter);
 
 app.get('/api/health', async (req, res) => {
