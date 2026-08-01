@@ -18,25 +18,10 @@ jimotyRouter.get('/favorites', async (req, res, next) => {
   } catch (err) { handleErr(res, next, err); }
 });
 
-jimotyRouter.get('/messages', async (req, res, next) => {
+jimotyRouter.get('/my-posts', async (req, res, next) => {
   try {
-    const threads = await jmty.listThreads();
-    res.json({ data: threads });
-  } catch (err) { handleErr(res, next, err); }
-});
-
-jimotyRouter.get('/messages/:id', async (req, res, next) => {
-  try {
-    const thread = await jmty.getThread(req.params.id);
-    res.json({ data: thread });
-  } catch (err) { handleErr(res, next, err); }
-});
-
-jimotyRouter.post('/messages/:id/reply', async (req, res, next) => {
-  try {
-    const body = req.body?.body || req.body?.message || '';
-    const r = await jmty.replyThread(req.params.id, body);
-    res.json({ data: r });
+    const posts = await jmty.listMyPosts();
+    res.json({ data: posts });
   } catch (err) { handleErr(res, next, err); }
 });
 

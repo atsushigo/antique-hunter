@@ -84,95 +84,51 @@ function parseFavoritesHtml(html) {
   return items;
 }
 
-// ---------- 訊息列表 ----------
-export async function listThreads() {
-  const res = await fetchJmty('/my/messages');
+// ---------- 我的貼文 ----------
+// Jimoty 沒有統一 inbox，改讀「我的貼文」— Sam 自己上架的物件
+export async function listMyPosts() {
+  const res = await fetchJmty('/my/posts');
   const html = await res.text();
-  return parseThreadsHtml(html);
+  return parseMyPostsHtml(html);
 }
 
-function parseThreadsHtml(html) {
-  const threads = [];
+function parseMyPostsHtml(html) {
+  const posts = [];
   const seen = new Set();
-  // Jimoty 訊息 thread URL 格式（保守 guess）：/my/messages/{id}
-  const anchorRe = /<a[^>]+href="(\/my\/messages\/(\d+)(?:[^"]*)?)"[^>]*>/gi;
+  // /my/posts 是 table 布局，每 row 一個貼文
+  // 抓 article URL + 標題 + 狀態 + 問い合わせ數 / お気に入り數
+  const anchorRe = /<a[^>]+href="(https:\/\/jmty\.jp)?(\/[^"\/]+\/[a-z]+-[^"\/]+\/article-[a-z0-9]+)"[^>]*>/gi;
   let m;
   while ((m = anchorRe.exec(html))) {
-    const href = m[1];
-    const id = m[2];
-    if (seen.has(id)) continue;
-    seen.add(id);
+    const path = m[2];
+    const full = `https://jmty.jp${path}`;
+    if (seen.has(full)) continue;
+    seen.add(full);
+
     const start = m.index;
     const close = html.indexOf('</a>', start);
-    const inner = close > 0 ? html.slice(start, close) : html.slice(start, start + 2000);
-    // 保守：整段文字 collapse 為 preview
-    const preview = inner
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 200);
-    threads.push({
-      id,
-      url: `https://jmty.jp${href}`,
-      preview,
+    const inner = close > 0 ? html.slice(start, close) : '';
+    const forward = html.slice(start, start + 3000);
+
+    const titleM = inner.match(/>([^<]{3,120})</) || forward.match(/class=['"]p-item-title['"][\s\S]{0,80}?>([^<]{3,120})</);
+    const priceM = forward.match(/<b>([\d,]+)\s*円<\/b>|([\d,]+)\s*円/);
+    const price = priceM ? Number((priceM[1] || priceM[2]).replace(/,/g, '')) : null;
+    const isClosed = /受付終了|取引成立/.test(forward);
+    const inquiryM = forward.match(/問い合わせ数[^\d]{0,20}(\d+)/);
+    const favM = forward.match(/お気に入り数[^\d]{0,20}(\d+)/);
+
+    posts.push({
+      sourceUrl: full,
+      title: titleM ? decodeHtml(titleM[1].trim()) : null,
+      priceJpy: Number.isFinite(price) && price > 0 ? price : null,
+      isClosed,
+      inquiryCount: inquiryM ? Number(inquiryM[1]) : 0,
+      favoriteCount: favM ? Number(favM[1]) : 0,
+      category: path.match(/\/([a-z]+)-[^\/]+\//)?.[1] || null,
+      region: path.match(/^\/([a-z]+)\//)?.[1] || null,
     });
   }
-  return threads;
-}
-
-// ---------- 單一 thread 詳情 ----------
-export async function getThread(id) {
-  const res = await fetchJmty(`/my/messages/${id}`);
-  const html = await res.text();
-  return parseThreadHtml(html, id);
-}
-
-function parseThreadHtml(html, id) {
-  // 抓 CSRF token（reply 用）
-  const csrfM = html.match(/<meta[^>]+name="csrf-token"[^>]+content="([^"]+)"/i);
-  // 找 reply form action
-  const formM = html.match(/<form[^>]+action="([^"]+)"[^>]+method="post"/i);
-  const formAction = formM ? formM[1] : null;
-  // 訊息主體文字（粗略：抓所有明顯 message bubble class）
-  const bodyText = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return {
-    id,
-    csrfToken: csrfM ? csrfM[1] : null,
-    formAction,
-    bodyPreview: bodyText.slice(0, 2000),
-    rawHtmlSize: html.length,
-  };
-}
-
-// ---------- 送訊息 ----------
-export async function replyThread(id, body) {
-  if (!body || typeof body !== 'string' || !body.trim()) {
-    throw new Error('empty_body');
-  }
-  const thread = await getThread(id);
-  if (!thread.csrfToken || !thread.formAction) {
-    throw new Error('cannot_locate_form: 頁面結構可能已變，需人工檢視 raw HTML');
-  }
-  const formData = new URLSearchParams();
-  formData.set('authenticity_token', thread.csrfToken);
-  formData.set('message[body]', body.trim());
-
-  const res = await fetchJmty(thread.formAction, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'X-CSRF-Token': thread.csrfToken,
-      Origin: 'https://jmty.jp',
-      Referer: `https://jmty.jp/my/messages/${id}`,
-    },
-    body: formData.toString(),
-  });
-  return { ok: res.ok, status: res.status };
+  return posts;
 }
 
 // ---------- debug: 抓 raw HTML 給前端看（scope 決策：只 preview 前 5KB）----------

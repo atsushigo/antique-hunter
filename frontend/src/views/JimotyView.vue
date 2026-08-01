@@ -13,20 +13,35 @@
     </v-alert>
 
     <v-tabs v-model="tab" density="compact" color="primary" class="mb-2">
-      <v-tab value="favorites">★ 收藏</v-tab>
-      <v-tab value="messages">💬 訊息</v-tab>
+      <v-tab value="favorites">★ 收藏 <span class="ms-1 text-caption">{{ favorites.length }}</span></v-tab>
+      <v-tab value="my-posts">📝 我的貼文 <span class="ms-1 text-caption">{{ myPosts.length }}</span></v-tab>
     </v-tabs>
 
     <v-window v-model="tab">
       <!-- 收藏 -->
       <v-window-item value="favorites">
         <v-progress-linear v-if="loadingFav" indeterminate height="2" color="primary" />
+        <div v-if="!loadingFav && favorites.length" class="d-flex align-center mb-2 px-1">
+          <v-chip size="x-small" variant="tonal">共 {{ favorites.length }}</v-chip>
+          <v-chip size="x-small" variant="tonal" color="success" class="ms-1">有效 {{ favActive }}</v-chip>
+          <v-chip size="x-small" variant="tonal" color="grey" class="ms-1">已成交 {{ favSold }}</v-chip>
+          <v-spacer />
+          <v-btn-toggle v-model="favFilter" mandatory density="compact" color="primary" variant="outlined">
+            <v-btn value="active" size="x-small">有效</v-btn>
+            <v-btn value="all" size="x-small">全部</v-btn>
+          </v-btn-toggle>
+        </div>
         <div v-if="!loadingFav && !favorites.length" class="text-caption text-medium-emphasis text-center pa-6">
-          沒有收藏或抓不到（parser 若失敗可看
-          <v-btn size="x-small" variant="text" @click="showRaw('/my/favorite_article_references')">raw HTML</v-btn>）
+          沒有收藏
         </div>
         <div class="grid">
-          <v-card v-for="(it, i) in favorites" :key="i" variant="outlined" class="listing-card">
+          <v-card
+            v-for="(it, i) in filteredFavorites"
+            :key="i"
+            variant="outlined"
+            class="listing-card"
+            :class="{ 'is-sold': it.isSold }"
+          >
             <v-img v-if="it.imageUrl" :src="it.imageUrl" aspect-ratio="1" cover @click="openItem(it)" />
             <div v-else class="no-img d-flex align-center justify-center" @click="openItem(it)">
               <v-icon color="grey">mdi-image-off</v-icon>
@@ -37,7 +52,18 @@
                   <span v-if="it.priceJpy != null">¥{{ it.priceJpy.toLocaleString() }}</span>
                   <span v-else class="text-medium-emphasis">—</span>
                 </div>
-                <v-btn size="x-small" variant="tonal" icon="mdi-magic-staff" @click="appraise(it)" />
+                <v-chip
+                  v-if="it.isSold"
+                  size="x-small" color="grey" variant="tonal"
+                >已成交</v-chip>
+                <v-btn
+                  v-else
+                  size="x-small" variant="tonal" icon="mdi-magic-staff"
+                  @click="appraise(it)"
+                />
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ it.region }} · {{ it.category === 'car' ? '車輛' : '物件' }}
               </div>
               <div class="title text-caption font-weight-medium">
                 {{ it.title || '(無標題)' }}
@@ -47,78 +73,41 @@
         </div>
       </v-window-item>
 
-      <!-- 訊息 -->
-      <v-window-item value="messages">
-        <v-progress-linear v-if="loadingThreads" indeterminate height="2" color="primary" />
-        <div v-if="!loadingThreads && !threads.length" class="text-caption text-medium-emphasis text-center pa-6">
-          沒有訊息或抓不到（parser 若失敗可看
-          <v-btn size="x-small" variant="text" @click="showRaw('/my/messages')">raw HTML</v-btn>）
+      <!-- 我的貼文 -->
+      <v-window-item value="my-posts">
+        <v-progress-linear v-if="loadingPosts" indeterminate height="2" color="primary" />
+        <div v-if="!loadingPosts && !myPosts.length" class="text-caption text-medium-emphasis text-center pa-6">
+          你在 Jimoty 沒有上架中的貼文
         </div>
         <v-card
-          v-for="t in threads"
-          :key="t.id"
+          v-for="(p, i) in myPosts"
+          :key="i"
           variant="outlined"
-          class="mb-2 thread-card"
-          @click="openThread(t)"
+          class="mb-2 post-card"
+          @click="openItem(p)"
         >
           <v-card-text class="pa-3">
-            <div class="text-caption text-medium-emphasis mb-1">Thread #{{ t.id }}</div>
-            <div class="text-body-2 text-truncate-2">{{ t.preview }}</div>
+            <div class="d-flex align-center mb-1">
+              <div class="text-subtitle-2 font-weight-medium flex-grow-1">{{ p.title || '(無標題)' }}</div>
+              <v-chip v-if="p.isClosed" size="x-small" color="grey" variant="tonal">已結束</v-chip>
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              <span v-if="p.priceJpy" class="me-2">¥{{ p.priceJpy.toLocaleString() }}</span>
+              <span class="me-2">{{ p.region }} · {{ p.category === 'car' ? '車輛' : '物件' }}</span>
+              <v-icon size="12" class="ms-1 me-1">mdi-message</v-icon>{{ p.inquiryCount }}
+              <v-icon size="12" class="ms-2 me-1">mdi-star</v-icon>{{ p.favoriteCount }}
+            </div>
           </v-card-text>
         </v-card>
       </v-window-item>
     </v-window>
-
-    <!-- 訊息詳情 + 打稿送 -->
-    <v-dialog v-model="threadOpen" max-width="600">
-      <v-card v-if="activeThread">
-        <v-card-title class="text-body-1">
-          Thread #{{ activeThread.id }}
-          <v-spacer />
-          <v-btn size="small" variant="text" :href="activeThread.url" target="_blank">在 Jimoty 開啟</v-btn>
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-3">
-          <div class="text-caption text-medium-emphasis mb-2">
-            對話內容（原始）— {{ activeThread.rawHtmlSize?.toLocaleString() }} bytes
-          </div>
-          <div class="body-preview">{{ activeThread.bodyPreview }}</div>
-        </v-card-text>
-        <v-divider />
-        <v-card-text class="pa-3">
-          <div class="text-subtitle-2 mb-1">回覆</div>
-          <v-textarea
-            v-model="replyBody"
-            placeholder="打你的訊息..."
-            variant="outlined"
-            density="comfortable"
-            rows="3"
-            auto-grow
-            hide-details
-          />
-          <div class="d-flex align-center mt-2">
-            <div class="text-caption text-medium-emphasis">
-              ⚠️ 按送出前請再看一次 — 我不會自動改內容
-            </div>
-            <v-spacer />
-            <v-btn variant="text" @click="threadOpen = false">取消</v-btn>
-            <v-btn
-              color="primary"
-              :disabled="!replyBody.trim()"
-              :loading="sending"
-              @click="sendReply"
-            >送出</v-btn>
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
 
     <v-snackbar v-model="snackbar" :color="snackColor" :timeout="6000" location="top">{{ snackText }}</v-snackbar>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { useAppraisalsStore } from '../stores/appraisals.js';
@@ -128,19 +117,21 @@ const appraisals = useAppraisalsStore();
 
 const tab = ref('favorites');
 const favorites = ref([]);
-const threads = ref([]);
+const myPosts = ref([]);
 const loadingFav = ref(false);
-const loadingThreads = ref(false);
+const loadingPosts = ref(false);
 const notLoggedIn = ref(false);
-
-const threadOpen = ref(false);
-const activeThread = ref(null);
-const replyBody = ref('');
-const sending = ref(false);
+const favFilter = ref('active');
 
 const snackbar = ref(false);
 const snackText = ref('');
 const snackColor = ref('success');
+
+const favActive = computed(() => favorites.value.filter((f) => !f.isSold).length);
+const favSold = computed(() => favorites.value.filter((f) => f.isSold).length);
+const filteredFavorites = computed(() =>
+  favFilter.value === 'active' ? favorites.value.filter((f) => !f.isSold) : favorites.value
+);
 
 async function loadFav() {
   loadingFav.value = true;
@@ -154,40 +145,15 @@ async function loadFav() {
   } finally { loadingFav.value = false; }
 }
 
-async function loadThreads() {
-  loadingThreads.value = true;
+async function loadMyPosts() {
+  loadingPosts.value = true;
   try {
-    const { data } = await api.get('/jimoty/messages');
-    threads.value = data.data;
+    const { data } = await api.get('/jimoty/my-posts');
+    myPosts.value = data.data;
   } catch (err) {
     if (err.error === 'not_logged_in' || err.error === 'session_expired') notLoggedIn.value = true;
-    else snack('載入訊息失敗：' + err.message, 'error');
-  } finally { loadingThreads.value = false; }
-}
-
-async function openThread(t) {
-  const { data } = await api.get(`/jimoty/messages/${t.id}`);
-  activeThread.value = { ...data.data, url: t.url };
-  replyBody.value = '';
-  threadOpen.value = true;
-}
-
-async function sendReply() {
-  sending.value = true;
-  try {
-    const { data } = await api.post(`/jimoty/messages/${activeThread.value.id}/reply`, {
-      body: replyBody.value,
-    });
-    if (data.data.ok) {
-      snack('送出成功', 'success');
-      threadOpen.value = false;
-      await loadThreads();
-    } else {
-      snack('可能送失敗（status ' + data.data.status + '）', 'warning');
-    }
-  } catch (err) {
-    snack('送出失敗：' + err.message, 'error');
-  } finally { sending.value = false; }
+    else snack('載入貼文失敗：' + err.message, 'error');
+  } finally { loadingPosts.value = false; }
 }
 
 function appraise(it) {
@@ -198,16 +164,11 @@ function appraise(it) {
 }
 
 function openItem(it) { window.open(it.sourceUrl, '_blank', 'noopener'); }
-async function showRaw(path) {
-  const { data } = await api.get('/jimoty/raw', { params: { path } });
-  console.log('=== raw ===', data.data);
-  snack(`Raw dump 印在 console（${data.data.size} bytes）`, 'info');
-}
 function snack(text, color = 'success') { snackText.value = text; snackColor.value = color; snackbar.value = true; }
 
 onMounted(() => {
   loadFav();
-  loadThreads();
+  loadMyPosts();
 });
 </script>
 
@@ -220,13 +181,6 @@ onMounted(() => {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; min-height: 32px; line-height: 1.3;
 }
-.thread-card { cursor: pointer; }
-.text-truncate-2 {
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.body-preview {
-  max-height: 200px; overflow: auto;
-  background: rgba(0,0,0,0.03); padding: 8px; border-radius: 4px;
-  font-size: 12px; line-height: 1.5; white-space: pre-wrap;
-}
+.post-card { cursor: pointer; }
+.listing-card.is-sold { opacity: 0.55; }
 </style>

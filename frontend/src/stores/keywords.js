@@ -7,6 +7,8 @@ export const useKeywordsStore = defineStore('keywords', {
     supportedSites: [],
     inbox: [],
     inboxLoadedAt: null,
+    inboxPagination: null,
+    inboxPerKeyword: {},
     loading: false,
     error: null,
   }),
@@ -43,12 +45,16 @@ export const useKeywordsStore = defineStore('keywords', {
       await this.fetchInbox({ force: true });
       return data.data;
     },
-    async fetchInbox({ days = 7, force = false } = {}) {
-      if (!force && this.inboxLoadedAt && Date.now() - this.inboxLoadedAt < 60_000) return this.inbox;
-      const { data } = await api.get('/keywords/inbox', { params: { days } });
-      this.inbox = data.data;
+    async fetchInbox({ days = 7, keyword = null, limit = 50, offset = 0, append = false, force = false } = {}) {
+      if (!force && !offset && this.inboxLoadedAt && Date.now() - this.inboxLoadedAt < 60_000 && !keyword) return this.inbox;
+      const params = { days, limit, offset };
+      if (keyword) params.keyword = keyword;
+      const { data } = await api.get('/keywords/inbox', { params });
+      this.inbox = append ? [...this.inbox, ...data.data] : data.data;
+      this.inboxPagination = data.pagination;
+      this.inboxPerKeyword = data.perKeyword;
       this.inboxLoadedAt = Date.now();
-      return this.inbox;
+      return data;
     },
     async dismiss(id) {
       await api.post(`/keywords/inbox/${id}/dismiss`);

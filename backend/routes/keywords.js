@@ -85,20 +85,49 @@ keywordsRouter.post('/:id/run', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/inbox?days=7  — 近 N 天新出現 listings
+// GET /api/inbox?days=7&keyword=X&limit=50&offset=0&includeInactive=1
+// 預設：只列 active keyword 的 listing、近 7 天、最多 50 筆（分頁）
 keywordsRouter.get('/inbox', async (req, res, next) => {
   try {
     const days = Math.min(60, Math.max(1, Number(req.query.days) || 7));
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    const includeInactive = req.query.includeInactive === '1';
+    const kwFilter = req.query.keyword ? String(req.query.keyword) : null;
+
     const since = new Date(Date.now() - days * 24 * 3600 * 1000);
-    const listings = await TrackedListing.findAll({
-      where: {
-        firstSeenAt: { [Op.gte]: since },
-        isDismissed: false,
-      },
-      include: [{ model: SearchKeyword, as: 'keyword' }],
-      order: [['first_seen_at', 'DESC']],
-      limit: 200,
+    const where = { firstSeenAt: { [Op.gte]: since }, isDismissed: false };
+
+    const kwWhere = {};
+    if (!includeInactive) kwWhere.isActive = true;
+    if (kwFilter) kwWhere.keyword = kwFilter;
+
+    // total 供分頁用
+    const total = await TrackedListing.count({
+      where,
+      include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
     });
+
+    const listings = await TrackedListing.findAll({
+      where,
+      include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
+      order: [['first_seen_at', 'DESC']],
+      limit,
+      offset,
+    });
+
+    // 每個 active keyword 的 count（給 UI 篩選 chip 顯示）
+    const perKeyword = await TrackedListing.findAll({
+      where,
+      include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true, attributes: ['id', 'keyword'] }],
+      attributes: ['keyword_id'],
+    });
+    const kwCount = {};
+    for (const l of perKeyword) {
+      const kw = l.keyword?.keyword;
+      if (kw) kwCount[kw] = (kwCount[kw] || 0) + 1;
+    }
+
     res.json({
       data: listings.map((l) => ({
         id: l.id,
@@ -114,6 +143,8 @@ keywordsRouter.get('/inbox', async (req, res, next) => {
         keyword: l.keyword?.keyword,
       })),
       range: { days, since },
+      pagination: { limit, offset, total, hasMore: offset + listings.length < total },
+      perKeyword: kwCount,
     });
   } catch (err) { next(err); }
 });

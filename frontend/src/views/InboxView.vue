@@ -15,11 +15,31 @@
       <v-card-text class="pa-2 d-flex align-center">
         <v-icon size="16" class="me-2">mdi-information</v-icon>
         <div class="text-caption flex-grow-1">
-          追蹤中的關鍵字在 Yahoo Auction + Jimoty + Mercari + Rakuma 抓到的新上架，共 {{ store.inbox.length }} 件（篩後 {{ filtered.length }}）
+          追蹤中 keyword 的 4 站新上架，共 {{ pagination?.total || 0 }} 件（顯示 {{ filtered.length }}）
         </div>
         <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">管理</v-btn>
       </v-card-text>
     </v-card>
+
+    <!-- Keyword filter chips -->
+    <div v-if="keywordChips.length" class="d-flex align-center flex-wrap ga-1 mb-2 px-1">
+      <v-chip
+        size="small"
+        :color="!keywordFilter ? 'primary' : undefined"
+        :variant="!keywordFilter ? 'flat' : 'outlined'"
+        @click="setKeywordFilter(null)"
+      >全部 {{ pagination?.total || 0 }}</v-chip>
+      <v-chip
+        v-for="k in keywordChips"
+        :key="k.name"
+        size="small"
+        :color="keywordFilter === k.name ? 'primary' : undefined"
+        :variant="keywordFilter === k.name ? 'flat' : 'outlined'"
+        @click="setKeywordFilter(k.name)"
+      >
+        🔍 {{ k.name }} <span class="ms-1 text-caption">{{ k.count }}</span>
+      </v-chip>
+    </div>
 
     <!-- 價格 + 排序 filter -->
     <div class="d-flex align-center flex-wrap ga-1 mb-2 px-1">
@@ -27,7 +47,7 @@
         v-for="b in PRICE_BUCKETS"
         :key="b.id"
         size="small"
-        :color="priceBucket === b.id ? 'primary' : undefined"
+        :color="priceBucket === b.id ? 'secondary' : undefined"
         :variant="priceBucket === b.id ? 'flat' : 'outlined'"
         @click="priceBucket = b.id"
       >{{ b.label }}</v-chip>
@@ -85,7 +105,7 @@
             {{ item.title || '(無標題)' }}
           </div>
           <div class="text-caption text-medium-emphasis mt-1">
-            <v-chip size="x-small" variant="text" class="pa-0">🔍 {{ item.keyword }}</v-chip>
+            🔍 {{ item.keyword }}
           </div>
           <div class="d-flex mt-2 ga-1">
             <v-btn
@@ -106,6 +126,18 @@
         </v-card-text>
       </v-card>
     </div>
+
+    <!-- Load more -->
+    <div v-if="pagination?.hasMore" class="text-center mt-4">
+      <v-btn
+        variant="tonal"
+        color="primary"
+        :loading="loadingMore"
+        @click="loadMore"
+      >
+        載入更多（還有 {{ pagination.total - store.inbox.length }} 筆）
+      </v-btn>
+    </div>
   </v-container>
 </template>
 
@@ -121,17 +153,52 @@ const store = useKeywordsStore();
 const appraisals = useAppraisalsStore();
 const days = ref(3);
 const loading = ref(false);
+const loadingMore = ref(false);
 const appraising = ref(null);
 const priceBucket = ref('all');
 const sortBy = ref('new');
+const keywordFilter = ref(null);
+const pageSize = 50;
 
 const inboxList = computed(() => store.inbox);
 const filtered = useFilteredSorted(inboxList, priceBucket, sortBy, 'firstSeenAt');
+const pagination = computed(() => store.inboxPagination);
+const keywordChips = computed(() =>
+  Object.entries(store.inboxPerKeyword || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }))
+);
 
 async function load() {
   loading.value = true;
-  try { await store.fetchInbox({ days: days.value, force: true }); }
-  finally { loading.value = false; }
+  try {
+    await store.fetchInbox({
+      days: days.value,
+      keyword: keywordFilter.value,
+      limit: pageSize,
+      offset: 0,
+      force: true,
+    });
+  } finally { loading.value = false; }
+}
+
+async function loadMore() {
+  if (!pagination.value?.hasMore) return;
+  loadingMore.value = true;
+  try {
+    await store.fetchInbox({
+      days: days.value,
+      keyword: keywordFilter.value,
+      limit: pageSize,
+      offset: store.inbox.length,
+      append: true,
+      force: true,
+    });
+  } finally { loadingMore.value = false; }
+}
+
+function setKeywordFilter(name) {
+  keywordFilter.value = name;
 }
 
 async function onAppraise(item) {
@@ -159,7 +226,7 @@ async function onDismiss(item) {
 }
 
 onMounted(load);
-watch(days, load);
+watch([days, keywordFilter], load);
 </script>
 
 <style scoped>
