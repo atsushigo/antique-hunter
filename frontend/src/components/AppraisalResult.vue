@@ -19,26 +19,48 @@
         </span>
       </div>
 
-      <div v-if="result.sourceTitle" class="text-body-2 text-medium-emphasis mb-2 text-truncate-2">
-        {{ result.sourceTitle }}
+      <!-- === URL 模式：來源商品資訊（獨立區塊，不會跟 AI 混淆）=== -->
+      <div v-if="result.sourceUrl" class="source-block mb-3">
+        <div class="d-flex align-center mb-1">
+          <v-icon size="14" class="me-1" color="grey">mdi-link-variant</v-icon>
+          <span class="text-caption text-medium-emphasis flex-grow-1">
+            來源商品（{{ siteBadge(result.sourceHost, result.sourceUrl) }}）
+          </span>
+        </div>
+        <div v-if="result.sourceTitle" class="source-title text-body-2 mb-2">
+          {{ result.sourceTitle }}
+        </div>
+        <div v-if="result.listedPriceJpy != null" class="d-flex align-baseline">
+          <span class="text-caption text-medium-emphasis me-2">賣家掛牌價</span>
+          <span class="source-price">¥{{ formatN(result.listedPriceJpy) }}</span>
+        </div>
+        <div v-else class="text-caption text-medium-emphasis">
+          （掛牌價未抓到 — 頁面缺 og:price meta）
+        </div>
       </div>
 
+      <!-- === AI 判斷區塊 === -->
+      <div class="text-caption text-medium-emphasis mb-1" v-if="result.sourceUrl">
+        <v-icon size="14" class="me-1">mdi-robot</v-icon>AI 判斷
+      </div>
       <div class="text-h5 mb-1">{{ result.category || '無法辨識' }}</div>
-      <div class="text-body-2 text-medium-emphasis mb-4">{{ result.era || '—' }}</div>
+      <div class="text-body-2 text-medium-emphasis mb-3">{{ result.era || '—' }}</div>
 
-      <!-- URL 模式：掛牌 vs 估價 -->
+      <!-- URL 模式：合理區間 + verdict -->
       <div v-if="result.listedPriceJpy != null" class="verdict-block mb-3">
         <div class="d-flex align-baseline mb-2">
           <div class="me-3">
-            <div class="text-caption text-medium-emphasis">賣家掛牌</div>
-            <div class="listed-price">¥{{ formatN(result.listedPriceJpy) }}</div>
+            <div class="text-caption text-medium-emphasis">AI 估合理區間</div>
+            <div class="range-price">¥{{ formatN(result.priceMinJpy) }}~¥{{ formatN(result.priceMaxJpy) }}</div>
           </div>
           <div class="verdict-arrow me-3">
             <v-icon :color="verdictColor" size="24">{{ verdictIcon }}</v-icon>
           </div>
           <div>
-            <div class="text-caption text-medium-emphasis">合理區間</div>
-            <div class="range-price">¥{{ formatN(result.priceMinJpy) }}~¥{{ formatN(result.priceMaxJpy) }}</div>
+            <div class="text-caption text-medium-emphasis">vs 掛牌</div>
+            <div class="verdict-word" :style="{ color: `rgb(var(--v-theme-${verdictColor}))` }">
+              {{ verdictShort }}
+            </div>
           </div>
         </div>
         <v-chip :color="verdictColor" variant="flat" size="small" :prepend-icon="verdictIcon">
@@ -46,11 +68,17 @@
         </v-chip>
       </div>
 
-      <!-- 純拍照：只顯示估價 -->
-      <div v-else class="price-row">
-        <span class="price-yen">¥{{ formatN(result.priceMinJpy) }}</span>
-        <span class="price-sep">~</span>
-        <span class="price-yen">¥{{ formatN(result.priceMaxJpy) }}</span>
+      <!-- URL 模式無掛牌價 or 純拍照：只顯示估價 -->
+      <div v-else>
+        <div class="text-caption text-medium-emphasis mb-1">
+          <v-icon v-if="!result.sourceUrl" size="14" class="me-1">mdi-robot</v-icon>
+          <span v-if="!result.sourceUrl">AI 估合理區間</span>
+        </div>
+        <div class="price-row">
+          <span class="price-yen">¥{{ formatN(result.priceMinJpy) }}</span>
+          <span class="price-sep">~</span>
+          <span class="price-yen">¥{{ formatN(result.priceMaxJpy) }}</span>
+        </div>
       </div>
 
       <div class="mt-3 d-flex align-center">
@@ -159,14 +187,15 @@ const confColor = computed(() => {
 });
 
 const VERDICT = {
-  low: { color: 'success', icon: 'mdi-arrow-down-bold', label: '撿漏機會（低於行情）' },
-  fair: { color: 'primary', icon: 'mdi-approximately-equal', label: '合理價（可入手）' },
-  high: { color: 'warning', icon: 'mdi-arrow-up-bold', label: '偏高（考慮殺價）' },
-  unknown: { color: 'grey', icon: 'mdi-help-circle', label: '無法判斷' },
+  low: { color: 'success', icon: 'mdi-arrow-down-bold', label: '撿漏機會（低於行情）', short: '偏低' },
+  fair: { color: 'primary', icon: 'mdi-approximately-equal', label: '合理價（可入手）', short: '合理' },
+  high: { color: 'warning', icon: 'mdi-arrow-up-bold', label: '偏高（考慮殺價）', short: '偏高' },
+  unknown: { color: 'grey', icon: 'mdi-help-circle', label: '無法判斷', short: '?' },
 };
 const verdictColor = computed(() => VERDICT[props.result.priceVerdict]?.color || 'grey');
 const verdictIcon = computed(() => VERDICT[props.result.priceVerdict]?.icon || 'mdi-help-circle');
 const verdictLabel = computed(() => VERDICT[props.result.priceVerdict]?.label || '—');
+const verdictShort = computed(() => VERDICT[props.result.priceVerdict]?.short || '?');
 
 function formatN(n) {
   return n == null ? '—' : Number(n).toLocaleString();
@@ -209,20 +238,35 @@ watch(() => props.result?.sourceUrl, loadHistory);
   color: #795548;
 }
 .price-sep { color: #999; }
-.verdict-block {
-  background: rgba(121, 85, 72, 0.04);
-  border-radius: 8px;
-  padding: 12px;
+.source-block {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 3px solid #8D6E63;
+  border-radius: 4px;
+  padding: 10px 12px;
 }
-.listed-price {
+.source-title {
+  color: #3E2723;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.source-price {
   font-size: 1.5rem;
   font-weight: 700;
   color: #3E2723;
 }
+.verdict-block {
+  background: rgba(121, 85, 72, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+}
 .range-price {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #795548;
+}
+.verdict-word {
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 .verdict-arrow {
   align-self: flex-end;
