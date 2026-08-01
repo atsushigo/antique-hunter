@@ -188,6 +188,7 @@ appraisalRouter.post('/url/preview', async (req, res, next) => {
         ...meta,
         host: source.host,
         siteLabel: source.siteLabel,
+        region: source.region,
       },
     });
   } catch (err) {

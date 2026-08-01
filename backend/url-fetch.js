@@ -7,7 +7,8 @@ const ALLOWED_HOSTS = new Set([
   'mercari.jp',
   'page.auctions.yahoo.co.jp',
   'auctions.yahoo.co.jp',
-  'fril.jp', // ラクマ
+  'fril.jp',    // ラクマ
+  'jmty.jp',    // ジモティー（path-based region，一個 host 覆蓋全国）
 ]);
 
 const HOST_LABEL = {
@@ -17,7 +18,38 @@ const HOST_LABEL = {
   'page.auctions.yahoo.co.jp': 'Yahoo Auction',
   'auctions.yahoo.co.jp': 'Yahoo Auction',
   'fril.jp': 'Rakuma',
+  'jmty.jp': 'Jimoty',
 };
+
+// Jimoty URL path 第一段 = 都道府県 romaji（or 'all'）
+const JIMOTY_REGIONS = {
+  all: '全国',
+  // 北海道・東北
+  hokkaido: '北海道', aomori: '青森', iwate: '岩手', miyagi: '宮城',
+  akita: '秋田', yamagata: '山形', fukushima: '福島',
+  // 関東
+  ibaraki: '茨城', tochigi: '栃木', gunma: '群馬', saitama: '埼玉',
+  chiba: '千葉', tokyo: '東京', kanagawa: '神奈川',
+  // 中部
+  niigata: '新潟', toyama: '富山', ishikawa: '石川', fukui: '福井',
+  yamanashi: '山梨', nagano: '長野', gifu: '岐阜', shizuoka: '静岡', aichi: '愛知',
+  // 関西
+  mie: '三重', shiga: '滋賀', kyoto: '京都', osaka: '大阪',
+  hyogo: '兵庫', nara: '奈良', wakayama: '和歌山',
+  // 中国
+  tottori: '鳥取', shimane: '島根', okayama: '岡山', hiroshima: '広島', yamaguchi: '山口',
+  // 四国
+  tokushima: '徳島', kagawa: '香川', ehime: '愛媛', kochi: '高知',
+  // 九州・沖縄
+  fukuoka: '福岡', saga: '佐賀', nagasaki: '長崎', kumamoto: '熊本',
+  oita: '大分', miyazaki: '宮崎', kagoshima: '鹿児島', okinawa: '沖縄',
+};
+
+export function extractJimotyRegion(url) {
+  if (url.hostname !== 'jmty.jp') return null;
+  const seg = url.pathname.split('/').filter(Boolean)[0];
+  return JIMOTY_REGIONS[seg] || null;
+}
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
@@ -51,7 +83,12 @@ export function parseAndValidateUrl(raw) {
       `不支援 ${u.hostname}，目前僅：Mercari / Yahoo Auction / Rakuma`
     );
   }
-  return { url: u, host: u.hostname, siteLabel: HOST_LABEL[u.hostname] };
+  return {
+    url: u,
+    host: u.hostname,
+    siteLabel: HOST_LABEL[u.hostname],
+    region: extractJimotyRegion(u),
+  };
 }
 
 async function fetchWithLimits(url, { timeoutMs, maxBytes, accept }) {

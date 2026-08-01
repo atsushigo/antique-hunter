@@ -2,13 +2,13 @@
   <v-container class="px-3 pb-16">
     <div class="text-h6 mb-1">URL 估價</div>
     <div class="text-caption text-medium-emphasis mb-3">
-      支援 Mercari / Yahoo Auction / Rakuma 商品頁
+      支援 Mercari / Yahoo Auction / Rakuma / Jimoty 商品頁
     </div>
 
     <v-text-field
       v-model="url"
       label="貼上商品 URL"
-      placeholder="https://jp.mercari.com/item/... 或 https://page.auctions.yahoo.co.jp/..."
+      placeholder="https://jp.mercari.com/item/... 或 https://jmty.jp/osaka/sale-... 等"
       variant="outlined"
       density="comfortable"
       clearable
@@ -49,6 +49,9 @@
         <v-col cols="8" class="pa-3">
           <div class="d-flex align-center mb-1">
             <v-chip size="x-small" color="primary" variant="tonal">{{ preview.siteLabel }}</v-chip>
+            <v-chip v-if="preview.region" size="x-small" variant="tonal" color="secondary" class="ms-1">
+              {{ preview.region }}
+            </v-chip>
             <v-spacer />
             <div v-if="preview.listedPriceJpy != null" class="text-h6 font-weight-bold" style="color:#795548">
               ¥{{ preview.listedPriceJpy.toLocaleString() }}
@@ -77,9 +80,9 @@
     <div v-if="!preview && !previewing" class="text-caption text-medium-emphasis pa-4 tips">
       <div class="mb-2">💡 撿漏 tip：</div>
       <ul class="ps-4">
-        <li>Mercari 找關鍵字「不明」「詳細不明」「祖父の遺品」「昭和レトロ」</li>
-        <li>Yahoo Auction 找「まとめて」「大量」「セット」（藏單品）</li>
-        <li>週日晚上 9-11 點是 Mercari 新上架高峰</li>
+        <li><b>Mercari</b> 關鍵字「不明」「詳細不明」「祖父の遺品」「昭和レトロ」；週日晚 9-11 點新上架高峰</li>
+        <li><b>Yahoo Auction</b>「まとめて」「大量」「セット」（藏單品）；平日凌晨截標競爭少</li>
+        <li><b>Jimoty</b>「無料」「引き取り限定」（自取常有免費/超便宜，搬家/遺品處分品香）— 貼 URL 前先看是不是你能自取的地區</li>
       </ul>
     </div>
   </v-container>

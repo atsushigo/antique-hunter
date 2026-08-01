@@ -11,7 +11,7 @@
         >{{ riskLabel }}</v-chip>
         <v-chip v-if="result.mock" color="warning" size="small" variant="tonal" class="me-2">MOCK</v-chip>
         <v-chip v-if="result.sourceHost" size="small" variant="tonal" color="primary" class="me-2">
-          {{ hostLabel(result.sourceHost) }}
+          {{ siteBadge(result.sourceHost, result.sourceUrl) }}
         </v-chip>
         <v-spacer />
         <span class="text-caption text-medium-emphasis">
@@ -101,6 +101,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { siteBadge } from '../labels.js';
 
 const props = defineProps({
   result: { type: Object, required: true },
@@ -135,14 +136,6 @@ const VERDICT = {
 const verdictColor = computed(() => VERDICT[props.result.priceVerdict]?.color || 'grey');
 const verdictIcon = computed(() => VERDICT[props.result.priceVerdict]?.icon || 'mdi-help-circle');
 const verdictLabel = computed(() => VERDICT[props.result.priceVerdict]?.label || '—');
-
-const HOST_LABEL = {
-  'jp.mercari.com': 'Mercari',
-  'mercari.com': 'Mercari',
-  'page.auctions.yahoo.co.jp': 'Yahoo Auction',
-  'fril.jp': 'Rakuma',
-};
-function hostLabel(host) { return HOST_LABEL[host] || host; }
 
 function formatN(n) {
   return n == null ? '—' : Number(n).toLocaleString();

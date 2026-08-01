@@ -35,6 +35,7 @@
 - ✅ `AppraisalLog` schema 加 source_url / source_title / source_host / listed_price_jpy / price_verdict / is_collected
 - ✅ `claude.js` 拆成 `appraise({mode, context})`，URL 模式 system prompt 判定 verdict（low=撿漏 / fair=合理 / high=偏高 / unknown）；mock 也對應
 - ✅ `POST /api/appraisal/url`、`POST /api/appraisal/url/preview`（純預覽不呼 Claude）
+- ✅ 白名單站別：**Mercari / Yahoo Auction / Rakuma / Jimoty**（Jimoty 用 path-based region，一個 host 覆蓋全国 47 都道府県 + 全国）；`frontend/src/labels.js` 共用 hostLabel + regionOf util，Jimoty 自動秀「Jimoty · 大阪」badge
 - ✅ `UrlAppraisalView`：貼 URL → 預覽卡（縮圖+標題+掛牌價）→ 送 AI → 進 ResultView
 - ✅ `AppraisalResult` 支援 URL 模式：掛牌 ¥X → 合理區間 ¥Y-Z + verdict badge + 「看原頁」外連
 

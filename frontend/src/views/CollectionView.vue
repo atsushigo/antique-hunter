@@ -32,7 +32,7 @@
             variant="tonal"
             color="primary"
             class="ms-1"
-          >{{ hostLabel(item.sourceHost) }}</v-chip>
+          >{{ siteBadge(item.sourceHost, item.sourceUrl) }}</v-chip>
         </div>
         <div class="text-caption text-medium-emphasis mt-1">{{ item.era }}</div>
         <div class="d-flex align-baseline mt-2 flex-wrap ga-3">
@@ -63,6 +63,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { api } from '../api.js';
+import { siteBadge } from '../labels.js';
 
 const list = ref([]);
 const loading = ref(false);
@@ -79,14 +80,6 @@ async function load() {
     loading.value = false;
   }
 }
-
-const HOST_LABEL = {
-  'jp.mercari.com': 'Mercari',
-  'mercari.com': 'Mercari',
-  'page.auctions.yahoo.co.jp': 'Yahoo Auction',
-  'fril.jp': 'Rakuma',
-};
-function hostLabel(host) { return HOST_LABEL[host] || host; }
 
 const VERDICT = {
   low: { color: 'success', label: '撿漏' },
