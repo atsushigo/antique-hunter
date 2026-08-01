@@ -82,57 +82,55 @@
       篩選後無結果 — 試試放寬價格條件
     </div>
 
-    <div class="grid">
-      <v-card
+    <div class="list">
+      <div
         v-for="item in filtered"
         :key="item.id"
-        variant="outlined"
-        class="listing-card"
+        class="row"
+        @click="onAppraise(item)"
       >
         <v-img
           v-if="item.imageUrl"
           :src="item.imageUrl"
-          aspect-ratio="1"
+          class="thumb"
           cover
-          @click="onAppraise(item)"
         />
-        <div v-else class="no-img d-flex align-center justify-center" @click="onAppraise(item)">
-          <v-icon color="grey">mdi-image-off</v-icon>
+        <div v-else class="thumb no-img d-flex align-center justify-center">
+          <v-icon size="20" color="grey">mdi-image-off</v-icon>
         </div>
-        <v-card-text class="pa-2">
-          <div class="d-flex align-center mb-1">
-            <v-chip size="x-small" variant="tonal" color="primary">{{ item.siteLabel }}</v-chip>
-            <v-spacer />
-            <div class="price">
+        <div class="body">
+          <div class="line-1">
+            <span class="price">
               <span v-if="item.priceJpy === 0 && item.priceLabel">{{ item.priceLabel }}</span>
               <span v-else-if="item.priceJpy != null">¥{{ item.priceJpy.toLocaleString() }}</span>
-              <span v-else>—</span>
-            </div>
+              <span v-else class="text-medium-emphasis">—</span>
+            </span>
+            <span class="title">{{ item.title || '(無標題)' }}</span>
           </div>
-          <div class="title text-caption font-weight-medium">
-            {{ item.title || '(無標題)' }}
+          <div class="line-2">
+            <span class="site">{{ item.siteLabel }}</span>
+            <span class="sep">·</span>
+            <span class="kw">🔍 {{ item.keyword }}</span>
+            <span class="sep">·</span>
+            <span class="date">{{ formatRelative(item.firstSeenAt) }}</span>
           </div>
-          <div class="text-caption text-medium-emphasis mt-1">
-            🔍 {{ item.keyword }}
-          </div>
-          <div class="d-flex mt-2 ga-1">
-            <v-btn
-              size="x-small"
-              variant="tonal"
-              prepend-icon="mdi-magic-staff"
-              :loading="appraising === item.id"
-              @click="onAppraise(item)"
-            >估價</v-btn>
-            <v-spacer />
-            <v-btn
-              size="x-small"
-              variant="text"
-              icon="mdi-close"
-              @click="onDismiss(item)"
-            />
-          </div>
-        </v-card-text>
-      </v-card>
+        </div>
+        <div class="actions" @click.stop>
+          <v-btn
+            size="x-small"
+            variant="tonal"
+            icon="mdi-magic-staff"
+            :loading="appraising === item.id"
+            @click="onAppraise(item)"
+          />
+          <v-btn
+            size="x-small"
+            variant="text"
+            icon="mdi-close"
+            @click="onDismiss(item)"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Load more -->
@@ -233,35 +231,98 @@ async function onDismiss(item) {
   await store.dismiss(item.id);
 }
 
+function formatRelative(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diffMin = Math.floor((Date.now() - d) / 60000);
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  return `${Math.floor(diffHr / 24)}d`;
+}
+
 onMounted(load);
 watch([days, keywordFilter], load);
 </script>
 
 <style scoped>
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.listing-card {
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  background: #FDFBF7;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.row:active {
+  background: rgba(121, 85, 72, 0.08);
+}
+.thumb {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .no-img {
-  aspect-ratio: 1;
   background: rgba(0,0,0,0.05);
-  cursor: pointer;
 }
-.price {
+.body {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.line-1 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.line-1 .price {
+  flex-shrink: 0;
   font-size: 14px;
   font-weight: 700;
   color: #795548;
 }
-.title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.line-1 .title {
+  font-size: 13px;
+  color: #3E2723;
   overflow: hidden;
-  min-height: 32px;
-  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.line-2 {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.line-2 .site {
+  color: rgb(var(--v-theme-primary));
+  font-weight: 500;
+}
+.line-2 .sep {
+  opacity: 0.4;
+}
+.actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
 }
 </style>
