@@ -9,7 +9,11 @@ import { connect, sequelize } from './db.js';
 import { marketsRouter } from './routes/markets.js';
 import { appraisalRouter } from './routes/appraisal.js';
 import { eventsRouter } from './routes/events.js';
+import { keywordsRouter } from './routes/keywords.js';
+import { searchRouter } from './routes/search.js';
+import { startCron } from './cron.js';
 import './models/MarketEvent.js';
+import './models/TrackedListing.js';
 
 const app = express();
 
@@ -32,6 +36,8 @@ app.use(
 app.use('/api/markets', marketsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/appraisal', appraisalRouter);
+app.use('/api/keywords', keywordsRouter);
+app.use('/api/search', searchRouter);
 
 app.get('/api/health', async (req, res) => {
   let db = 'ok';
@@ -67,6 +73,7 @@ async function start() {
     console.log(`[antique-hunter] http://localhost:${config.port}`);
     console.log(`[antique-hunter] env=${config.env} claude=${config.claude.enabled ? 'on' : 'off (no ANTHROPIC_API_KEY)'}`);
   });
+  startCron();
 }
 
 start().catch((err) => {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { Op } from 'sequelize';
 import { processUpload } from '../image.js';
 import { appraise } from '../claude.js';
 import { AppraisalLog } from '../models/AppraisalLog.js';
@@ -197,6 +198,82 @@ appraisalRouter.post('/url/preview', async (req, res, next) => {
     }
     next(err);
   }
+});
+
+// 歷史 + 統計
+appraisalRouter.get('/history', async (req, res, next) => {
+  try {
+    const days = Math.min(365, Math.max(1, Number(req.query.days) || 30));
+    const source = String(req.query.source || '').trim(); // 'photo' | 'url' | 'all' | ''
+    const verdict = String(req.query.verdict || '').trim(); // low/fair/high/unknown
+    const risk = String(req.query.risk || '').trim(); // green/yellow/red
+    const collected = req.query.collected === '1';
+
+    const since = new Date(Date.now() - days * 24 * 3600 * 1000);
+    const where = { createdAt: { [Op.gte]: since } };
+    if (source === 'url') where.sourceUrl = { [Op.ne]: null };
+    else if (source === 'photo') where.sourceUrl = null;
+    if (verdict) where.priceVerdict = verdict;
+    if (risk) where.authenticityRisk = risk;
+    if (collected) where.isCollected = true;
+
+    const logs = await AppraisalLog.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+      limit: 200,
+    });
+    res.json({
+      data: logs.map((l) => ({
+        id: l.id,
+        category: l.category,
+        era: l.era,
+        priceMinJpy: l.priceMinJpy,
+        priceMaxJpy: l.priceMaxJpy,
+        listedPriceJpy: l.listedPriceJpy,
+        priceVerdict: l.priceVerdict,
+        authenticityRisk: l.authenticityRisk,
+        confidence: l.confidence,
+        sourceUrl: l.sourceUrl,
+        sourceHost: l.sourceHost,
+        sourceTitle: l.sourceTitle,
+        isCollected: l.isCollected,
+        mock: l.mock,
+        createdAt: l.createdAt,
+      })),
+      range: { days, since },
+    });
+  } catch (err) { next(err); }
+});
+
+appraisalRouter.get('/stats', async (req, res, next) => {
+  try {
+    const days = Math.min(365, Math.max(1, Number(req.query.days) || 30));
+    const since = new Date(Date.now() - days * 24 * 3600 * 1000);
+    const logs = await AppraisalLog.findAll({
+      where: { createdAt: { [Op.gte]: since } },
+      attributes: ['priceVerdict', 'authenticityRisk', 'sourceUrl', 'sourceHost', 'isCollected'],
+    });
+    const stats = {
+      total: logs.length,
+      collected: 0,
+      bySource: { photo: 0, url: 0 },
+      byHost: {},
+      byVerdict: { low: 0, fair: 0, high: 0, unknown: 0 },
+      byRisk: { green: 0, yellow: 0, red: 0 },
+    };
+    for (const l of logs) {
+      if (l.isCollected) stats.collected++;
+      if (l.sourceUrl) {
+        stats.bySource.url++;
+        if (l.sourceHost) stats.byHost[l.sourceHost] = (stats.byHost[l.sourceHost] || 0) + 1;
+      } else {
+        stats.bySource.photo++;
+      }
+      if (l.priceVerdict && stats.byVerdict[l.priceVerdict] != null) stats.byVerdict[l.priceVerdict]++;
+      if (l.authenticityRisk && stats.byRisk[l.authenticityRisk] != null) stats.byRisk[l.authenticityRisk]++;
+    }
+    res.json({ data: stats, range: { days, since } });
+  } catch (err) { next(err); }
 });
 
 // 收藏 toggle
