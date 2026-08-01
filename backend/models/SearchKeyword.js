@@ -43,7 +43,9 @@ export class SearchKeyword extends Model {
 // 車輛 positive markers — 明確年份/里程/車検/交易術語才收
 // 注意：H\d+ 之類太寬會誤 match chassis code（如「E-H56A」「H58A」パジェロミニ 型號）
 // 年份必須跟「年」，Heisei/Reiwa 只 1-2 位數
-const CAR_POSITIVE_MARKERS = /(\d+\s*万\s*km|\d+\s*万\s*キロ|\d+\s*キロ台|車検|年式|H\d{1,2}年|平成\d{1,2}年?|令和\d{1,2}年?|R\d{1,2}年|20\d\d年|支払.*総額|総額\s*\d+\s*万|走行\s*距離|4WD|CVT|MT車|AT車|5MT|6MT|オートローン|禁煙車|オールペン|走行\d+km)/i;
+// 車輛 positive markers — 只要 title 含任一即視為整車
+// 分類：里程/年份/交易術語/專屬車輛用詞
+const CAR_POSITIVE_MARKERS = /(\d+\s*万\s*km|\d+\s*万\s*キロ|\d+\s*キロ台|車検|年式|H\d{1,2}年|平成\d{1,2}年?|令和\d{1,2}年?|R\d{1,2}年|20\d\d年|支払.*総額|総額\s*\d+\s*万|走行\s*距離|走行\d+km|車両本体|車両価格|(?<![部零販])本体|実動|名義変更|ナンバー付|車庫証明|修復歴|事故車|現状渡し|車検残|車検有|車検付|走行不明|走行少|禁煙車|オールペン|オートローン|4WD|CVT|MT車|AT車|5MT|6MT)/i;
 
 SearchKeyword.init(
   {
