@@ -110,41 +110,27 @@ keywordsRouter.get('/inbox', async (req, res, next) => {
     if (!includeInactive) kwWhere.isActive = true;
     if (kwFilter) kwWhere.keyword = kwFilter;
 
-    // total 供分頁用
-    const total = await TrackedListing.count({
-      where,
-      include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
-    });
-
-    // 分頁時同步 apply 排除詞 filter（keyword.excludeArray）
-    // 為簡單起見：多抓一些後 JS 過濾（因每 keyword 排除詞短）
-    const overFetch = Math.min(500, limit * 4);
-    const raw = await TrackedListing.findAll({
+    // 先抓所有 raw rows（含 keyword 關聯），全部 apply filter 拿真正 filtered 總數
+    // 註：filters 有正則 + include 判斷不易寫成 SQL，故 JS 端做
+    const allRaw = await TrackedListing.findAll({
       where,
       include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true }],
       order: [['first_seen_at', 'DESC']],
-      limit: overFetch,
-      offset,
     });
-    const listings = raw
-      .filter((l) => {
-        if (!l.keyword) return false;
-        if (l.keyword.isExcluded(l.title)) return false;
-        if (l.title && !l.title.toLowerCase().includes(l.keyword.keyword.toLowerCase())) return false;
-        // 類別 positive filter
-        if (!l.keyword.matchesCategory({ site: l.site, sourceUrl: l.sourceUrl, title: l.title })) return false;
-        return true;
-      })
-      .slice(0, limit);
+    const passFilter = (l) => {
+      if (!l.keyword) return false;
+      if (l.keyword.isExcluded(l.title)) return false;
+      if (l.title && !l.title.toLowerCase().includes(l.keyword.keyword.toLowerCase())) return false;
+      if (!l.keyword.matchesCategory({ site: l.site, sourceUrl: l.sourceUrl, title: l.title })) return false;
+      return true;
+    };
+    const filteredAll = allRaw.filter(passFilter);
+    const total = filteredAll.length;
+    const listings = filteredAll.slice(offset, offset + limit);
 
-    // 每個 active keyword 的 count（給 UI 篩選 chip 顯示）
-    const perKeyword = await TrackedListing.findAll({
-      where,
-      include: [{ model: SearchKeyword, as: 'keyword', where: kwWhere, required: true, attributes: ['id', 'keyword'] }],
-      attributes: ['keyword_id'],
-    });
+    // perKeyword 也用 filtered 結果算，count 才會跟顯示對得起來
     const kwCount = {};
-    for (const l of perKeyword) {
+    for (const l of filteredAll) {
       const kw = l.keyword?.keyword;
       if (kw) kwCount[kw] = (kwCount[kw] || 0) + 1;
     }
