@@ -16,6 +16,7 @@ function serialize(kw) {
     lastRunAt: kw.lastRunAt,
     lastError: kw.lastError,
     excludeKeywords: kw.excludeKeywords || '',
+    categoryHint: kw.categoryHint || null,
     createdAt: kw.createdAt,
   };
 }
@@ -65,6 +66,9 @@ keywordsRouter.patch('/:id', async (req, res, next) => {
     if (typeof req.body?.isActive === 'boolean') kw.isActive = req.body.isActive;
     if (typeof req.body?.excludeKeywords === 'string') {
       kw.excludeKeywords = req.body.excludeKeywords.slice(0, 500);
+    }
+    if (['car', 'antique', null, ''].includes(req.body?.categoryHint)) {
+      kw.categoryHint = req.body.categoryHint || null;
     }
     await kw.save();
     res.json({ data: serialize(kw) });
@@ -125,10 +129,10 @@ keywordsRouter.get('/inbox', async (req, res, next) => {
     const listings = raw
       .filter((l) => {
         if (!l.keyword) return false;
-        // 排除詞
         if (l.keyword.isExcluded(l.title)) return false;
-        // title 必須含 keyword（防 description-only match）
         if (l.title && !l.title.toLowerCase().includes(l.keyword.keyword.toLowerCase())) return false;
+        // 類別 positive filter
+        if (!l.keyword.matchesCategory({ site: l.site, sourceUrl: l.sourceUrl, title: l.title })) return false;
         return true;
       })
       .slice(0, limit);
@@ -194,6 +198,8 @@ export async function runKeyword(kw) {
         // 過濾：title 存在但不含 keyword（Jimoty 搜 description 常回不相關項）
         if (item.title && !item.title.toLowerCase().includes(kwLower)) continue;
         if (kw.isExcluded(item.title)) continue;
+        // 類別 positive filter
+        if (!kw.matchesCategory({ site, sourceUrl: item.sourceUrl, title: item.title })) continue;
         const [row, created] = await TrackedListing.findOrCreate({
           where: { keywordId: kw.id, sourceUrl: item.sourceUrl },
           defaults: {

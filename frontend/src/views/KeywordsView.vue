@@ -124,13 +124,34 @@
             @update:model-value="toggleActive(kw)"
           />
         </div>
-        <div class="d-flex flex-wrap ga-1 mb-1">
+        <div class="d-flex flex-wrap align-center ga-1 mb-1">
           <v-chip
             v-for="s in kw.sites"
             :key="s"
             size="x-small"
             variant="tonal"
           >{{ siteLabel(s) }}</v-chip>
+          <v-menu>
+            <template #activator="{ props }">
+              <v-chip
+                v-bind="props"
+                size="x-small"
+                :color="kw.categoryHint ? 'secondary' : undefined"
+                :variant="kw.categoryHint ? 'flat' : 'outlined'"
+                append-icon="mdi-menu-down"
+              >{{ categoryLabel(kw.categoryHint) }}</v-chip>
+            </template>
+            <v-list density="compact">
+              <v-list-item
+                v-for="c in CATEGORIES"
+                :key="c.id || 'none'"
+                @click="setCategory(kw, c.id)"
+              >
+                <v-list-item-title>{{ c.label }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">{{ c.hint }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
         <div class="text-caption text-medium-emphasis">
           <span v-if="kw.lastRunAt">上次跑 {{ formatDate(kw.lastRunAt) }}</span>
@@ -194,6 +215,24 @@ const adding = ref(false);
 const excludeOpen = reactive({});
 const excludeDraft = reactive({});
 
+const CATEGORIES = [
+  { id: null, label: '類別：不限', hint: '不做類別過濾' },
+  { id: 'car', label: '類別：車輛', hint: 'Jimoty 只吃 /car-*；Yahoo Auction 需含 車検/万km/年式 等' },
+  { id: 'antique', label: '類別：物件', hint: 'Jimoty 排除 /car-* 分類' },
+];
+
+function categoryLabel(c) {
+  const item = CATEGORIES.find((x) => x.id === c);
+  return item ? item.label : '類別：不限';
+}
+
+async function setCategory(kw, categoryHint) {
+  await store.update(kw.id, { categoryHint });
+  snackText.value = `「${kw.keyword}」類別已設為 ${categoryLabel(categoryHint)}`;
+  snackColor.value = 'success';
+  snackbar.value = true;
+}
+
 const CAR_DEFAULTS = [
   // 基本零件
   'カタログ トミカ ミニカー プラモ フィギュア',
@@ -206,7 +245,7 @@ const CAR_DEFAULTS = [
   'エンブレム ロゴ ワッペン ステッカー フィルム',
   'ハーネス ワイヤー ケーブル モール カバー ワイパー フォグ',
   '部品 純正 中古品 サービスマニュアル 訳あり ジャンク パーツ 部品取り',
-  '空気入れ 電動ポンプ',
+  '空気入れ 電動ポンプ リアゲート ダッシュ ヒーター ブロアモーター',
   // 非車類（Rolex Explorer 手錶、Gibson Explorer 吉他等）
   '腕時計 時計 ケース カフス ペンダント 封筒 冊子 カード',
   'ギター エレキ Epiphone Gibson Fender エレキギター',
