@@ -73,6 +73,35 @@
         class="mt-4"
       >{{ result.notes }}</v-alert>
 
+      <!-- 鑑真 checklist -->
+      <div v-if="result.authenticityChecks?.length" class="mt-4">
+        <div class="text-caption font-weight-medium mb-1">
+          <v-icon size="14" class="me-1">mdi-shield-check</v-icon>鑑真檢查
+        </div>
+        <v-list density="compact" class="check-list pa-0" nav>
+          <v-list-item
+            v-for="(c, i) in result.authenticityChecks"
+            :key="i"
+            :prepend-icon="checkIcon(c.verdict)"
+            :class="`check-${c.verdict}`"
+          >
+            <v-list-item-title class="text-body-2">{{ c.aspect }}</v-list-item-title>
+            <v-list-item-subtitle class="text-caption">{{ c.observation }}</v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+      </div>
+
+      <!-- 價格歷史 sparkline -->
+      <div v-if="result.sourceUrl && priceHistory.length >= 2" class="mt-4 hist-block">
+        <div class="text-caption font-weight-medium mb-1">
+          <v-icon size="14" class="me-1">mdi-chart-line</v-icon>此 URL 價格歷史（近 60 天）
+        </div>
+        <Sparkline :points="priceHistory" :width="240" :height="40" />
+        <div class="text-caption text-medium-emphasis mt-1">
+          {{ priceHistory.length }} 次記錄 · 首次 {{ formatDate(priceHistory[0].seenAt) }}
+        </div>
+      </div>
+
       <!-- 動作列：源連結 + 收藏 -->
       <div class="d-flex mt-4 ga-2">
         <v-btn
@@ -100,8 +129,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { siteBadge } from '../labels.js';
+import { api } from '../api.js';
+import Sparkline from './Sparkline.vue';
 
 const props = defineProps({
   result: { type: Object, required: true },
@@ -140,6 +171,30 @@ const verdictLabel = computed(() => VERDICT[props.result.priceVerdict]?.label ||
 function formatN(n) {
   return n == null ? '—' : Number(n).toLocaleString();
 }
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function checkIcon(v) {
+  return {
+    consistent_with_real: 'mdi-check-circle',
+    suspicious: 'mdi-alert-circle',
+    cannot_tell: 'mdi-help-circle',
+  }[v] || 'mdi-help-circle';
+}
+
+// 抓價格歷史（URL 模式）
+const priceHistory = ref([]);
+async function loadHistory() {
+  if (!props.result?.sourceUrl) return;
+  try {
+    const { data } = await api.get('/appraisal/price-history', { params: { url: props.result.sourceUrl, days: 60 } });
+    priceHistory.value = data.data;
+  } catch { /* silent */ }
+}
+onMounted(loadHistory);
+watch(() => props.result?.sourceUrl, loadHistory);
 </script>
 
 <style scoped>
@@ -178,5 +233,20 @@ function formatN(n) {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.check-list :deep(.v-list-item) {
+  padding-inline: 8px;
+  min-height: 40px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+.check-list .check-consistent_with_real :deep(.v-icon) { color: #2E7D32; }
+.check-list .check-suspicious :deep(.v-icon) { color: #C62828; }
+.check-list .check-cannot_tell :deep(.v-icon) { color: #B0BEC5; }
+.check-list .check-suspicious { background: rgba(198, 40, 40, 0.06); }
+.hist-block {
+  background: rgba(121, 85, 72, 0.04);
+  padding: 12px;
+  border-radius: 8px;
 }
 </style>

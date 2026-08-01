@@ -27,6 +27,18 @@ AppraisalLog.init(
     listedPriceJpy: { type: DataTypes.INTEGER, field: 'listed_price_jpy' },
     priceVerdict: { type: DataTypes.STRING(16), field: 'price_verdict' },
     isCollected: { type: DataTypes.BOOLEAN, field: 'is_collected', defaultValue: false, allowNull: false },
+    authenticityChecks: {
+      type: DataTypes.TEXT,
+      field: 'authenticity_checks',
+      get() {
+        const raw = this.getDataValue('authenticityChecks');
+        if (!raw) return [];
+        try { return JSON.parse(raw); } catch { return []; }
+      },
+      set(v) {
+        this.setDataValue('authenticityChecks', v ? JSON.stringify(v) : null);
+      },
+    },
   },
   {
     sequelize,

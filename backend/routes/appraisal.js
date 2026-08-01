@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import { processUpload } from '../image.js';
 import { appraise } from '../claude.js';
 import { AppraisalLog } from '../models/AppraisalLog.js';
+import { snapshotPrice, historyFor } from '../models/PriceSnapshot.js';
 import { parseAndValidateUrl, fetchMetadata, fetchImage, UrlFetchError } from '../url-fetch.js';
 
 const upload = multer({
@@ -28,6 +29,7 @@ function toApi(log, result) {
     priceMaxJpy: result.price_max_jpy,
     confidence: result.confidence,
     authenticityRisk: result.authenticity_risk,
+    authenticityChecks: result.authenticity_checks || [],
     priceVerdict: result.price_verdict || null,
     notes: result.notes,
     modelUsed: result.model_used,
@@ -65,6 +67,7 @@ appraisalRouter.post('/', upload.single('image'), async (req, res, next) => {
       priceMaxJpy: result.price_max_jpy,
       confidence: result.confidence,
       authenticityRisk: result.authenticity_risk,
+      authenticityChecks: result.authenticity_checks,
       notes: result.notes,
       rawResponse: result.raw_response,
       modelUsed: result.model_used,
@@ -149,6 +152,7 @@ appraisalRouter.post('/url', async (req, res, next) => {
       priceMaxJpy: result.price_max_jpy,
       confidence: result.confidence,
       authenticityRisk: result.authenticity_risk,
+      authenticityChecks: result.authenticity_checks,
       notes: result.notes,
       rawResponse: result.raw_response,
       modelUsed: result.model_used,
@@ -161,10 +165,34 @@ appraisalRouter.post('/url', async (req, res, next) => {
       priceVerdict: result.price_verdict,
     });
 
+    // log 掛牌價到 price_snapshots（供趨勢圖）
+    if (meta.listedPriceJpy) {
+      await snapshotPrice({
+        sourceUrl: source.url.toString(),
+        sourceHost: source.host,
+        priceJpy: meta.listedPriceJpy,
+        sourceType: 'appraisal',
+      }).catch((e) => console.warn('[snapshot]', e.message));
+    }
+
     res.json({ data: toApi(log, result), metadata: meta });
   } catch (err) {
     next(err);
   }
+});
+
+// 價格歷史（同 URL 的時序）
+appraisalRouter.get('/price-history', async (req, res, next) => {
+  try {
+    const url = String(req.query.url || '').trim();
+    if (!url) return res.status(400).json({ error: 'missing_url' });
+    const days = Math.min(365, Math.max(1, Number(req.query.days) || 60));
+    const snaps = await historyFor(url, { days });
+    res.json({
+      data: snaps.map((s) => ({ seenAt: s.seenAt, priceJpy: s.priceJpy })),
+      count: snaps.length,
+    });
+  } catch (err) { next(err); }
 });
 
 // URL 預覽（只抓 metadata，不送 Claude）— 前端貼 URL 後可先預覽

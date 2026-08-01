@@ -15,6 +15,7 @@ import { startCron } from './cron.js';
 import { closeBrowser } from './browser.js';
 import './models/MarketEvent.js';
 import './models/TrackedListing.js';
+import './models/PriceSnapshot.js';
 
 const app = express();
 

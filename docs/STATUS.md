@@ -106,6 +106,8 @@ cd frontend && npm install && npm run dev
 - ~~鑑定歷史 + 統計~~ ✅
 - ~~Mercari SPA 爬取~~ ✅ Playwright 掛好
 - ~~Rakuma parser~~ ✅ 走 Playwright（原本以為 SSR，實測也是 SPA）
+- ~~假貨識別加強~~ ✅ system prompt 加 Rolex/LV/Chanel/Meissen 等 4 大熱區檢查點；結構化 `authenticity_checks` 陣列（aspect + observation + verdict: consistent_with_real / suspicious / cannot_tell），UI 分色列表
+- ~~PriceHistory 趨勢~~ ✅ `price_snapshots` 表 + 智慧 dedup（24h 內同價不重複）；`runKeyword` 每筆 log、`POST /appraisal/url` 也 log；`GET /appraisal/price-history?url=` + `Sparkline.vue` 純 SVG 迷你圖表（漲=紅、跌=綠），AppraisalResult URL 模式秀「近 60 天價格歷史」
 - **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
 - **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
 - 假貨識別加強（Rolex 王冠/字體 專項 prompt）

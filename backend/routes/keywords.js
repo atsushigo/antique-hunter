@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Op } from 'sequelize';
 import { SearchKeyword } from '../models/SearchKeyword.js';
 import { TrackedListing } from '../models/TrackedListing.js';
+import { snapshotPrice } from '../models/PriceSnapshot.js';
 import { searchSite, SEARCH_SITES, SITE_LABELS, ALL_SITES_META, ScrapeError } from '../search-scrape.js';
 
 export const keywordsRouter = Router();
@@ -154,12 +155,18 @@ export async function runKeyword(kw) {
           },
         });
         if (created) newCount++;
-        else {
-          // 更新價格/圖（可能有變）
-          if (item.priceJpy != null && item.priceJpy !== row.priceJpy) {
-            row.priceJpy = item.priceJpy;
-            await row.save();
-          }
+        else if (item.priceJpy != null && item.priceJpy !== row.priceJpy) {
+          row.priceJpy = item.priceJpy;
+          await row.save();
+        }
+        // 每筆抓到的價格都嘗試 snapshot（內部會依 dedup 規則決定是否 insert）
+        if (item.priceJpy) {
+          await snapshotPrice({
+            sourceUrl: item.sourceUrl,
+            sourceHost: hostFromSite(site),
+            priceJpy: item.priceJpy,
+            sourceType: 'tracked',
+          }).catch((e) => console.warn('[snapshot]', e.message));
         }
       }
       summary.perSite.push({ site, fetched: items.length, new: newCount });
@@ -176,4 +183,13 @@ export async function runKeyword(kw) {
   await kw.save();
 
   return summary;
+}
+
+function hostFromSite(site) {
+  return {
+    yahoo_auction: 'auctions.yahoo.co.jp',
+    jimoty: 'jmty.jp',
+    mercari: 'jp.mercari.com',
+    rakuma: 'fril.jp',
+  }[site] || null;
 }
