@@ -15,11 +15,27 @@
       <v-card-text class="pa-2 d-flex align-center">
         <v-icon size="16" class="me-2">mdi-information</v-icon>
         <div class="text-caption flex-grow-1">
-          你追蹤的關鍵字在 <b>Yahoo Auction + Jimoty</b> 抓到的新上架，共 {{ store.inbox.length }} 件
+          追蹤中的關鍵字在 Yahoo Auction + Jimoty + Mercari + Rakuma 抓到的新上架，共 {{ store.inbox.length }} 件（篩後 {{ filtered.length }}）
         </div>
-        <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">管理關鍵字</v-btn>
+        <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">管理</v-btn>
       </v-card-text>
     </v-card>
+
+    <!-- 價格 + 排序 filter -->
+    <div class="d-flex align-center flex-wrap ga-1 mb-2 px-1">
+      <v-chip
+        v-for="b in PRICE_BUCKETS"
+        :key="b.id"
+        size="small"
+        :color="priceBucket === b.id ? 'primary' : undefined"
+        :variant="priceBucket === b.id ? 'flat' : 'outlined'"
+        @click="priceBucket = b.id"
+      >{{ b.label }}</v-chip>
+      <v-spacer />
+      <v-btn-toggle v-model="sortBy" mandatory density="compact" color="primary" variant="outlined">
+        <v-btn v-for="s in SORT_OPTIONS" :key="s.id" :value="s.id" size="x-small">{{ s.label }}</v-btn>
+      </v-btn-toggle>
+    </div>
 
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
 
@@ -34,9 +50,13 @@
       </v-btn>
     </div>
 
+    <div v-else-if="!filtered.length" class="text-center pa-8 text-caption text-medium-emphasis">
+      篩選後無結果 — 試試放寬價格條件
+    </div>
+
     <div class="grid">
       <v-card
-        v-for="item in store.inbox"
+        v-for="item in filtered"
         :key="item.id"
         variant="outlined"
         class="listing-card"
@@ -90,10 +110,11 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKeywordsStore } from '../stores/keywords.js';
 import { useAppraisalsStore } from '../stores/appraisals.js';
+import { PRICE_BUCKETS, SORT_OPTIONS, useFilteredSorted } from '../composables/priceFilter.js';
 
 const router = useRouter();
 const store = useKeywordsStore();
@@ -101,6 +122,11 @@ const appraisals = useAppraisalsStore();
 const days = ref(3);
 const loading = ref(false);
 const appraising = ref(null);
+const priceBucket = ref('all');
+const sortBy = ref('new');
+
+const inboxList = computed(() => store.inbox);
+const filtered = useFilteredSorted(inboxList, priceBucket, sortBy, 'firstSeenAt');
 
 async function load() {
   loading.value = true;

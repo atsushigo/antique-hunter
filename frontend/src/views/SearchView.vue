@@ -30,16 +30,37 @@
 
     <v-alert v-if="apiError" type="error" density="compact" class="mb-2">{{ apiError }}</v-alert>
 
+    <!-- 價格 + 排序 filter（僅在有結果時秀）-->
+    <div v-if="groups.length" class="d-flex align-center flex-wrap ga-1 mb-3 px-1">
+      <v-chip
+        v-for="b in PRICE_BUCKETS"
+        :key="b.id"
+        size="small"
+        :color="priceBucket === b.id ? 'primary' : undefined"
+        :variant="priceBucket === b.id ? 'flat' : 'outlined'"
+        @click="priceBucket = b.id"
+      >{{ b.label }}</v-chip>
+      <v-spacer />
+      <v-btn-toggle v-model="sortBy" mandatory density="compact" color="primary" variant="outlined">
+        <v-btn v-for="s in SORT_OPTIONS" :key="s.id" :value="s.id" size="x-small">{{ s.label }}</v-btn>
+      </v-btn-toggle>
+    </div>
+
     <div v-for="g in groups" :key="g.site" class="mb-4">
       <div class="d-flex align-center mb-2 px-1">
         <v-chip size="small" variant="tonal" color="primary">{{ g.siteLabel }}</v-chip>
-        <span class="text-caption text-medium-emphasis ms-2">{{ g.items.length }} 件</span>
+        <span class="text-caption text-medium-emphasis ms-2">
+          {{ filteredItems(g).length }} / {{ g.items.length }}
+        </span>
         <v-spacer />
         <span v-if="g.error" class="text-caption text-error">{{ g.error }}</span>
       </div>
+      <div v-if="!filteredItems(g).length && g.items.length" class="text-caption text-medium-emphasis text-center pa-2">
+        此價格範圍無結果
+      </div>
       <div class="grid">
         <v-card
-          v-for="(item, i) in g.items"
+          v-for="(item, i) in filteredItems(g)"
           :key="`${g.site}-${i}`"
           variant="outlined"
           class="listing-card"
@@ -84,6 +105,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api.js';
 import { useAppraisalsStore } from '../stores/appraisals.js';
+import { PRICE_BUCKETS, SORT_OPTIONS, passPrice } from '../composables/priceFilter.js';
 
 const router = useRouter();
 const appraisals = useAppraisalsStore();
@@ -92,6 +114,15 @@ const groups = ref([]);
 const searching = ref(false);
 const apiError = ref('');
 const appraising = ref(null);
+const priceBucket = ref('all');
+const sortBy = ref('cheap'); // 即時搜尋預設便宜先看
+
+function filteredItems(g) {
+  const arr = g.items.filter((it) => passPrice(it.priceJpy, priceBucket.value));
+  if (sortBy.value === 'cheap') return [...arr].sort((a, b) => (a.priceJpy ?? Infinity) - (b.priceJpy ?? Infinity));
+  if (sortBy.value === 'expensive') return [...arr].sort((a, b) => (b.priceJpy ?? -Infinity) - (a.priceJpy ?? -Infinity));
+  return arr; // 'new' = 保持 site 原順序（Yahoo Auction 是 sort=new 已排好）
+}
 
 async function onSearch() {
   if (!q.value?.trim()) return;

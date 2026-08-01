@@ -108,6 +108,8 @@ cd frontend && npm install && npm run dev
 - ~~Rakuma parser~~ ✅ 走 Playwright（原本以為 SSR，實測也是 SPA）
 - ~~假貨識別加強~~ ✅ system prompt 加 Rolex/LV/Chanel/Meissen 等 4 大熱區檢查點；結構化 `authenticity_checks` 陣列（aspect + observation + verdict: consistent_with_real / suspicious / cannot_tell），UI 分色列表
 - ~~PriceHistory 趨勢~~ ✅ `price_snapshots` 表 + 智慧 dedup（24h 內同價不重複）；`runKeyword` 每筆 log、`POST /appraisal/url` 也 log；`GET /appraisal/price-history?url=` + `Sparkline.vue` 純 SVG 迷你圖表（漲=紅、跌=綠），AppraisalResult URL 模式秀「近 60 天價格歷史」
+- ~~價格 filter + 排序~~ ✅ Inbox / Search / History 加預設價格 chip（全部/免費/¥1k/¥3k/¥1萬/¥3萬）+ 排序 toggle（新↓/便宜↑/貴↓）；共用 `composables/priceFilter.js`
+- ~~已售出過濾~~ ✅ Mercari URL 加 `status=on_sale` param；4 個 parser 都偵測 sold marker（SOLD OUT ribbon / 売切 / 取引済 / 落札済 / 終了）自動略過
 - **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
 - **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
 - 假貨識別加強（Rolex 王冠/字體 專項 prompt）

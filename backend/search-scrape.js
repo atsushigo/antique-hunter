@@ -27,9 +27,13 @@ export const ALL_SITES_META = [
 const SEARCH_URL = {
   yahoo_auction: (q) => `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(q)}&s1=new`,
   jimoty: (q) => `https://jmty.jp/all/sale?keyword=${encodeURIComponent(q)}`,
-  mercari: (q) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(q)}&sort=created_time&order=desc`,
+  // status=on_sale：Mercari 明確排除已售出
+  mercari: (q) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(q)}&sort=created_time&order=desc&status=on_sale`,
   rakuma: (q) => `https://fril.jp/s?query=${encodeURIComponent(q)}`,
 };
+
+// 各站已售出/已終了關鍵字 pattern
+const SOLD_PATTERNS = /SOLD\s*OUT|SOLD|売切|売り切|売却済|取引済|取引成立|募集終了|終了|落札済/i;
 
 const HTTP_PARSERS = {
   yahoo_auction: parseYahooAuction,
@@ -98,7 +102,6 @@ export async function searchSite(site, keyword) {
 function parseYahooAuction(html) {
   const items = [];
   const seen = new Set();
-  // 每個商品是一個 <a> tag 含 data-auction-* 屬性 + href
   const anchorRe = /<a\b([^>]*?data-auction-img[^>]*?)>/gi;
   let m;
   while ((m = anchorRe.exec(html))) {
@@ -112,9 +115,12 @@ function parseYahooAuction(html) {
     const priceStr = matchAttr(attrs, 'data-auction-price');
     const price = priceStr ? Number(priceStr.replace(/[^\d]/g, '')) : null;
 
-    // 找 title：從此 <a> 開始的區塊裡取 img alt 或 aria-label
     const blockEnd = html.indexOf('</a>', m.index);
     const block = blockEnd > 0 ? html.slice(m.index, blockEnd) : html.slice(m.index, m.index + 2000);
+    // 卡片外殼有時秀「落札済み」/ 「終了」
+    const outerBlock = html.slice(m.index, m.index + 3000);
+    if (SOLD_PATTERNS.test(outerBlock)) continue;
+
     const title = matchAttr(block, 'alt') || matchAttr(block, 'aria-label') || null;
 
     items.push({
@@ -145,6 +151,9 @@ function parseJimoty(html) {
     const close = html.indexOf('</a>', start);
     const innerBlock = close > 0 ? html.slice(start, close) : html.slice(start, start + 3000);
     const priceBlock = html.slice(start, start + 3000); // 含 </a> 之後的價格區
+
+    // 過濾已售出/募集終了
+    if (SOLD_PATTERNS.test(priceBlock)) continue;
 
     const imgMatch = innerBlock.match(/<img[^>]+src="(https:\/\/cdn\.jmty\.jp\/articles\/images\/[^"]+)"/i);
     const image = imgMatch ? imgMatch[1] : null;
@@ -186,6 +195,7 @@ async function scrapeMercariBrowser(url) {
       const nodes = document.querySelectorAll('a[href*="/item/"]');
       const seen = new Set();
       const out = [];
+      const soldRe = /SOLD/i;
       for (const a of nodes) {
         const href = a.getAttribute('href');
         if (!href) continue;
@@ -194,10 +204,14 @@ async function scrapeMercariBrowser(url) {
         const id = idM[1];
         if (seen.has(id)) continue;
         seen.add(id);
+        // 過濾 SOLD sticker（保底，URL param status=on_sale 已擋大部分）
+        const inner = a.innerText || '';
+        const soldEl = a.querySelector('[class*="sold"], [class*="Sold"], [data-testid*="sold"]');
+        if (soldEl || soldRe.test(inner)) continue;
+
         const thumb = a.querySelector('[role="img"][aria-label]');
         const img = a.querySelector('img');
         const aria = thumb?.getAttribute('aria-label') || '';
-        // aria-label 格式: "TITLE の画像 X,XXX円" — 取 title + price
         const pm = aria.match(/([\d,]+)\s*円\s*$/);
         const priceJpy = pm ? Number(pm[1].replace(/,/g, '')) : null;
         const title = aria.replace(/の画像\s*[\d,]+\s*円\s*$/, '').trim() || null;
@@ -238,6 +252,8 @@ async function scrapeRakumaBrowser(url) {
         const href = a.getAttribute('href');
         if (!href || seen.has(href)) continue;
         seen.add(href);
+        // 過濾 SOLD OUT ribbon
+        if (card.querySelector('.item-box__soldout_ribbon, [class*="soldout"], [class*="SoldOut"]')) continue;
         const img = card.querySelector('img');
         // 圖片：優先 real src；若還是 dummy，看 data-src / data-original
         let imgSrc = img?.getAttribute('src') || null;

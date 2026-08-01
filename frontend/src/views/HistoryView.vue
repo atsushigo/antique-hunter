@@ -54,7 +54,7 @@
     </v-card>
 
     <!-- Filters -->
-    <div class="d-flex flex-wrap ga-1 mb-2 px-1">
+    <div class="d-flex flex-wrap ga-1 mb-1 px-1">
       <v-chip
         size="small"
         :variant="filters.source ? 'flat' : 'outlined'"
@@ -76,6 +76,17 @@
         @click="filters.collected = !filters.collected"
       >⭐ 收藏</v-chip>
     </div>
+    <!-- Price filter -->
+    <div class="d-flex flex-wrap ga-1 mb-2 px-1">
+      <v-chip
+        v-for="b in PRICE_BUCKETS"
+        :key="b.id"
+        size="small"
+        :variant="priceBucket === b.id ? 'flat' : 'outlined'"
+        :color="priceBucket === b.id ? 'secondary' : undefined"
+        @click="priceBucket = b.id"
+      >{{ b.label }}</v-chip>
+    </div>
 
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
 
@@ -83,8 +94,12 @@
       這段時間沒有紀錄
     </div>
 
+    <div v-if="!loading && !filteredLogs.length && logs.length" class="text-caption text-medium-emphasis text-center pa-4">
+      篩選後無結果
+    </div>
+
     <v-card
-      v-for="log in logs"
+      v-for="log in filteredLogs"
       :key="log.id"
       variant="outlined"
       class="mb-2 log-card"
@@ -133,12 +148,27 @@
 import { ref, reactive, watch, onMounted, computed } from 'vue';
 import { api } from '../api.js';
 import { siteBadge, hostLabel } from '../labels.js';
+import { PRICE_BUCKETS, passPrice } from '../composables/priceFilter.js';
 
 const days = ref(30);
 const filters = reactive({ source: '', verdict: '', collected: false });
+const priceBucket = ref('all');
 const logs = ref([]);
 const stats = ref(null);
 const loading = ref(false);
+
+// History 用估價中位數比較 price bucket（因為 log 有 min~max 區間）
+const filteredLogs = computed(() => {
+  if (priceBucket.value === 'all') return logs.value;
+  return logs.value.filter((l) => {
+    const mid = l.priceMinJpy != null && l.priceMaxJpy != null
+      ? Math.round((l.priceMinJpy + l.priceMaxJpy) / 2)
+      : (l.priceMinJpy ?? l.priceMaxJpy ?? null);
+    // URL 模式下也用掛牌價 fallback
+    const compare = mid ?? l.listedPriceJpy ?? null;
+    return passPrice(compare, priceBucket.value);
+  });
+});
 
 async function load() {
   loading.value = true;
