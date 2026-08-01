@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Op } from 'sequelize';
 import { SearchKeyword } from '../models/SearchKeyword.js';
 import { TrackedListing } from '../models/TrackedListing.js';
-import { searchSite, SEARCH_SITES, SITE_LABELS, ScrapeError } from '../search-scrape.js';
+import { searchSite, SEARCH_SITES, SITE_LABELS, ALL_SITES_META, ScrapeError } from '../search-scrape.js';
 
 export const keywordsRouter = Router();
 
@@ -24,7 +24,7 @@ keywordsRouter.get('/', async (req, res, next) => {
     const kws = await SearchKeyword.findAll({ order: [['created_at', 'DESC']] });
     res.json({
       data: kws.map(serialize),
-      supportedSites: SEARCH_SITES.map((s) => ({ id: s, label: SITE_LABELS[s] })),
+      supportedSites: ALL_SITES_META, // 包含未支援站別（灰掉），完整揭露
     });
   } catch (err) { next(err); }
 });

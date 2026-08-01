@@ -9,15 +9,29 @@
         <v-btn :value="7" size="x-small">週</v-btn>
       </v-btn-toggle>
     </div>
-    <div class="text-caption text-medium-emphasis px-1 mb-2">
-      追蹤關鍵字 · {{ store.inbox.length }} 件新上架 · 點擊送 AI 估價
-    </div>
+
+    <!-- 來源說明 -->
+    <v-card variant="tonal" color="secondary" class="mb-2 mx-1 src-card">
+      <v-card-text class="pa-2 d-flex align-center">
+        <v-icon size="16" class="me-2">mdi-information</v-icon>
+        <div class="text-caption flex-grow-1">
+          你追蹤的關鍵字在 <b>Yahoo Auction + Jimoty</b> 抓到的新上架，共 {{ store.inbox.length }} 件
+        </div>
+        <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">管理關鍵字</v-btn>
+      </v-card-text>
+    </v-card>
 
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
 
-    <div v-if="!loading && !store.inbox.length" class="text-caption text-medium-emphasis text-center pa-8">
-      這段時間沒有新上架<br>
-      去 <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">關鍵字頁</v-btn> 加追蹤條件
+    <div v-if="!loading && !store.inbox.length" class="text-center pa-8">
+      <v-icon size="48" color="grey">mdi-inbox-outline</v-icon>
+      <div class="text-body-2 mt-2">這段時間沒有新上架</div>
+      <div class="text-caption text-medium-emphasis mt-1 mb-3">
+        還沒設關鍵字？加一個試試
+      </div>
+      <v-btn color="primary" variant="tonal" prepend-icon="mdi-plus" @click="$router.push('/keywords')">
+        去加追蹤關鍵字
+      </v-btn>
     </div>
 
     <div class="grid">

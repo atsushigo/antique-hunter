@@ -1,49 +1,82 @@
 <template>
-  <v-container class="px-4">
-    <div class="pt-6 pb-2">
-      <v-btn
+  <v-container class="px-3 pt-4">
+    <!-- 3 個主要功能大卡 -->
+    <div class="d-flex flex-column ga-3">
+      <v-card
         color="primary"
-        size="x-large"
         rounded="xl"
-        block
-        prepend-icon="mdi-camera"
+        class="action-card"
+        elevation="2"
         @click="$router.push('/camera')"
       >
-        拍照鑑定
-      </v-btn>
-      <v-btn
+        <v-card-text class="d-flex align-center pa-4">
+          <v-icon size="42" class="me-3">mdi-camera</v-icon>
+          <div>
+            <div class="text-h6 font-weight-bold">拍照鑑定</div>
+            <div class="text-caption">市集現場拿手機拍 → 3-5 秒 AI 估價</div>
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <v-card
         color="primary"
         variant="tonal"
         rounded="xl"
-        block
-        prepend-icon="mdi-link-variant"
-        class="mt-2"
+        class="action-card"
         @click="$router.push('/url')"
       >
-        貼 URL 估價（Mercari / Yahoo Auction / Rakuma）
-      </v-btn>
-      <v-btn
-        v-if="inboxCount > 0"
+        <v-card-text class="d-flex align-center pa-4">
+          <v-icon size="36" class="me-3">mdi-link-variant</v-icon>
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">貼 URL 估價</div>
+            <div class="text-caption">Mercari / Yahoo Auction / Rakuma / Jimoty 商品連結</div>
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <v-card
         color="secondary"
         variant="tonal"
         rounded="xl"
-        block
-        prepend-icon="mdi-inbox"
-        class="mt-2"
-        @click="$router.push('/inbox')"
+        class="action-card"
+        @click="$router.push('/keywords')"
       >
-        收件匣 <v-badge :content="inboxCount" color="error" inline class="ms-2" />
-      </v-btn>
-      <div class="d-flex flex-wrap ga-2 mt-2">
-        <v-btn variant="text" size="small" prepend-icon="mdi-calendar-month" @click="$router.push('/calendar')">市集</v-btn>
-        <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
-        <v-btn variant="text" size="small" prepend-icon="mdi-bookmark-multiple" @click="$router.push('/keywords')">追蹤</v-btn>
-        <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
-        <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
-      </div>
+        <v-card-text class="d-flex align-center pa-4">
+          <v-icon size="36" class="me-3">mdi-bell-ring</v-icon>
+          <div class="flex-grow-1">
+            <div class="d-flex align-center">
+              <div class="text-subtitle-1 font-weight-bold me-2">追蹤新上架</div>
+              <v-chip
+                v-if="inboxCount > 0"
+                size="x-small"
+                color="error"
+                variant="flat"
+              >{{ inboxCount }} 新</v-chip>
+            </div>
+            <div class="text-caption">
+              設關鍵字 → 每天早 8 點自動查 Yahoo Auction + Jimoty
+            </div>
+          </div>
+          <v-icon
+            v-if="inboxCount > 0"
+            size="18"
+            class="ms-2"
+            @click.stop="$router.push('/inbox')"
+          >mdi-inbox-arrow-down</v-icon>
+        </v-card-text>
+      </v-card>
     </div>
 
-    <div class="mt-8">
+    <!-- 次要工具列 -->
+    <div class="d-flex flex-wrap ga-1 mt-4 mb-2">
+      <v-btn variant="text" size="small" prepend-icon="mdi-calendar-month" @click="$router.push('/calendar')">市集日曆</v-btn>
+      <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
+      <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
+      <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
+    </div>
+
+    <!-- 最近鑑定 -->
+    <div class="mt-4">
       <div class="d-flex align-center mb-2">
         <span class="text-subtitle-2">最近鑑定</span>
         <v-spacer />
@@ -56,7 +89,7 @@
       </div>
 
       <div v-if="!store.list.length" class="text-caption text-medium-emphasis text-center pa-6">
-        還沒有紀錄，去拍第一件吧
+        還沒有紀錄
       </div>
 
       <v-row v-else dense>
@@ -107,3 +140,13 @@ function open(a) {
   router.push({ name: 'result', params: { localId: a.localId } });
 }
 </script>
+
+<style scoped>
+.action-card {
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.action-card:active {
+  transform: scale(0.98);
+}
+</style>
