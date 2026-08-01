@@ -110,6 +110,14 @@ appraisalRouter.post('/url', async (req, res, next) => {
       throw err;
     }
 
+    // 前端可傳 listedPriceJpy/title override（Jimoty 頁面 og:price 常缺，前端 scraper 已抓到）
+    if (!meta.listedPriceJpy && Number.isFinite(+req.body?.listedPriceJpy)) {
+      meta.listedPriceJpy = Math.floor(+req.body.listedPriceJpy);
+    }
+    if (!meta.title && typeof req.body?.title === 'string') {
+      meta.title = req.body.title.slice(0, 200);
+    }
+
     if (!meta.imageUrl) {
       return res.status(422).json({
         error: 'no_product_image',

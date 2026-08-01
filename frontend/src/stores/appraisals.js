@@ -73,7 +73,12 @@ export const useAppraisalsStore = defineStore('appraisals', {
       });
 
       try {
-        const { data } = await api.post('/appraisal/url', { url });
+        const body = { url };
+        // 若前端已從 inbox 抓到掛牌價，傳給 backend 當 fallback
+        // (Jimoty 頁面沒有 og:price meta，backend 自己抓不到)
+        if (preview?.listedPriceJpy) body.listedPriceJpy = preview.listedPriceJpy;
+        if (preview?.title) body.title = preview.title;
+        const { data } = await api.post('/appraisal/url', body);
         await updateAppraisal(localId, { status: 'done', result: data.data });
         await this.loadLocal();
         return localId;

@@ -9,10 +9,10 @@
       <v-img
         v-if="entry.thumbDataUrl"
         :src="entry.thumbDataUrl"
-        aspect-ratio="1"
-        cover
+        max-height="300"
+        contain
         rounded
-        class="mb-3"
+        class="mb-3 result-thumb"
       />
 
       <v-alert v-if="entry.status === 'pending'" type="info" density="compact" class="mb-3">
@@ -49,6 +49,13 @@
     </v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.result-thumb {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+</style>
 
 <script setup>
 import { onMounted, ref } from 'vue';

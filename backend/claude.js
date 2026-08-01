@@ -174,23 +174,26 @@ function mockAppraisal(mode, context) {
   ];
   if (mode === 'url') {
     const listed = context?.listedPriceJpy || 0;
-    let verdict = 'unknown';
+    // mock 估價：若有掛牌價，估區間 ±20%，verdict 恆定 fair；沒掛牌價才用 antique 預設
+    let priceMin, priceMax, verdict;
     if (listed > 0) {
-      if (listed < 800) verdict = 'low';
-      else if (listed <= 2500) verdict = 'fair';
-      else verdict = 'high';
+      priceMin = Math.floor(listed * 0.8);
+      priceMax = Math.floor(listed * 1.2);
+      verdict = 'fair';
+    } else {
+      priceMin = 800; priceMax = 2500; verdict = 'unknown';
     }
     return normalize(
       {
         category: (context?.title || '陶瓷茶碗').slice(0, 40) + '（mock）',
         era: '昭和中期（mock）',
-        price_min_jpy: 800,
-        price_max_jpy: 2500,
+        price_min_jpy: priceMin,
+        price_max_jpy: priceMax,
         confidence: 0.3,
         authenticity_risk: 'yellow',
         authenticity_checks: mockChecks,
         price_verdict: verdict,
-        notes: `MOCK：未設 ANTHROPIC_API_KEY。抓到掛牌 ¥${listed.toLocaleString()}。`,
+        notes: `MOCK：未設 ANTHROPIC_API_KEY，估價區間 = 掛牌 ±20%。真實估價需 Anthropic key。`,
       },
       mode,
       context
