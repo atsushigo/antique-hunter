@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-08-01 by Sam × Claude session
 
-## 目前狀態：Phase 1 MVP + 日曆 + Phase 2-1 URL 估價 + 收藏 ✅
+## 目前狀態：Phase 1 MVP + 日曆 + Phase 2-1 URL 估價 + 收藏 + Phase 3 追蹤/搜尋/歷史 ✅
 
 ## 已完成
 
@@ -45,6 +45,20 @@
 - ✅ `CollectionView`：列所有收藏，卡片顯示估價 + 掛牌 + verdict + 點卡片外連原頁
 - ✅ Home 新增「貼 URL 估價」次要按鈕 + 「市集日曆 / 收藏」快捷
 
+### Phase 3：追蹤 + 即時搜尋 + 歷史統計（**主動撈 + 事後分析**）
+- ✅ `search-scrape.js`：Yahoo Auction + Jimoty SSR HTML 爬取（Mercari 是 SPA，需 Playwright 才能爬 search，暫不支援；URL 貼上估價仍支援 Mercari）
+- ✅ `SearchKeyword` + `TrackedListing` schema + dedup（unique index on `keyword_id + source_url`）
+- ✅ `POST/GET/PATCH/DELETE /api/keywords`、`POST /api/keywords/:id/run`（手動觸發）
+- ✅ `GET /api/keywords/inbox?days=N`、`POST /api/keywords/inbox/:id/dismiss`
+- ✅ `cron.js`：`node-cron` 每天 08:00 跑所有 active keywords
+- ✅ `GET /api/search?q=&sites=`：即時搜尋不落地（Yahoo Auction + Jimoty 各 30 筆）
+- ✅ `GET /api/appraisal/history` + `/stats`：歷史 log（帶 source/verdict/risk/collected filter）+ 統計 breakdown
+- ✅ `KeywordsView`：關鍵字 CRUD、切 active、跑一次；顯示 lastRunAt + lastError
+- ✅ `InboxView`：新上架 grid（今日/3天/週切換），點卡片直接送 AI 估價，可 dismiss
+- ✅ `SearchView`：即時搜尋 grid，Yahoo Auction + Jimoty 平行顯示
+- ✅ `HistoryView`：summary strip（總鑑定/撿漏/收藏/仿品風險/來源分佈）+ filter chips（source × verdict × collected）
+- ✅ Home 加 inbox badge（有新上架時秀）+ 5 個快捷 tab（市集/即時搜尋/追蹤/歷史/收藏）
+
 ## 目前可跑
 
 ```bash
@@ -82,14 +96,17 @@ cd frontend && npm install && npm run dev
 
 ## 下一步：Phase 2+ 藍圖
 
-- ~~URL 貼上估價~~ ✅ MVP 完成（不用 Playwright，SSR og tag 已夠 Mercari/Yahoo Auction/Rakuma）
-- ~~收藏管理~~ ✅ 基礎版完成
-- 行情資料庫（PriceHistory model — 追蹤同款物件價格變化，做趨勢圖）
-- Mercari 站內搜尋 API 整合（主動撈關鍵字新上架，不用貼 URL）
-- 假貨識別加強（Rolex 王冠 logo / 字體 專項 prompt）
-- Alert 推播（PWA push notification）
-- 管理後台（admin/ 用 Element Plus）
-- 部署到 Hetzner personal-02（Docker Compose 併入 stack）
+- ~~URL 貼上估價~~ ✅
+- ~~收藏管理~~ ✅
+- ~~關鍵字 alert（in-app inbox 版）~~ ✅
+- ~~即時搜尋（Yahoo Auction + Jimoty）~~ ✅
+- ~~鑑定歷史 + 統計~~ ✅
+- **Mercari SPA 爬取**（要加 Playwright，~400MB browser download）
+- **行情資料庫**（`PriceHistory` — 追蹤同款成交價趨勢）
+- **email/LINE 推播**（cron 跑完寄 keyword 摘要，需 SMTP or LINE bot）
+- 假貨識別加強（Rolex 王冠/字體 專項 prompt）
+- 管理後台（admin/ Element Plus）
+- **部署 Hetzner personal-02**（Docker Compose）— cron 就會真的每天 8AM 跑
 
 ## 授權範圍
 

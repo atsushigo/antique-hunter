@@ -32,6 +32,30 @@ const routes = [
     meta: { title: '收藏' },
   },
   {
+    path: '/keywords',
+    name: 'keywords',
+    component: () => import('./views/KeywordsView.vue'),
+    meta: { title: '追蹤關鍵字' },
+  },
+  {
+    path: '/inbox',
+    name: 'inbox',
+    component: () => import('./views/InboxView.vue'),
+    meta: { title: '收件匣' },
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: () => import('./views/SearchView.vue'),
+    meta: { title: '即時搜尋' },
+  },
+  {
+    path: '/history',
+    name: 'history',
+    component: () => import('./views/HistoryView.vue'),
+    meta: { title: '鑑定歷史' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),

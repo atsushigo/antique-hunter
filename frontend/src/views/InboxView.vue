@@ -1,0 +1,152 @@
+<template>
+  <v-container class="px-2 pb-16">
+    <div class="d-flex align-center mb-2 px-1">
+      <div class="text-h6">收件匣</div>
+      <v-spacer />
+      <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
+        <v-btn :value="1" size="x-small">今日</v-btn>
+        <v-btn :value="3" size="x-small">3 天</v-btn>
+        <v-btn :value="7" size="x-small">週</v-btn>
+      </v-btn-toggle>
+    </div>
+    <div class="text-caption text-medium-emphasis px-1 mb-2">
+      追蹤關鍵字 · {{ store.inbox.length }} 件新上架 · 點擊送 AI 估價
+    </div>
+
+    <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
+
+    <div v-if="!loading && !store.inbox.length" class="text-caption text-medium-emphasis text-center pa-8">
+      這段時間沒有新上架<br>
+      去 <v-btn size="x-small" variant="text" @click="$router.push('/keywords')">關鍵字頁</v-btn> 加追蹤條件
+    </div>
+
+    <div class="grid">
+      <v-card
+        v-for="item in store.inbox"
+        :key="item.id"
+        variant="outlined"
+        class="listing-card"
+      >
+        <v-img
+          v-if="item.imageUrl"
+          :src="item.imageUrl"
+          aspect-ratio="1"
+          cover
+          @click="onAppraise(item)"
+        />
+        <div v-else class="no-img d-flex align-center justify-center" @click="onAppraise(item)">
+          <v-icon color="grey">mdi-image-off</v-icon>
+        </div>
+        <v-card-text class="pa-2">
+          <div class="d-flex align-center mb-1">
+            <v-chip size="x-small" variant="tonal" color="primary">{{ item.siteLabel }}</v-chip>
+            <v-spacer />
+            <div class="price">
+              <span v-if="item.priceJpy === 0 && item.priceLabel">{{ item.priceLabel }}</span>
+              <span v-else-if="item.priceJpy != null">¥{{ item.priceJpy.toLocaleString() }}</span>
+              <span v-else>—</span>
+            </div>
+          </div>
+          <div class="title text-caption font-weight-medium">
+            {{ item.title || '(無標題)' }}
+          </div>
+          <div class="text-caption text-medium-emphasis mt-1">
+            <v-chip size="x-small" variant="text" class="pa-0">🔍 {{ item.keyword }}</v-chip>
+          </div>
+          <div class="d-flex mt-2 ga-1">
+            <v-btn
+              size="x-small"
+              variant="tonal"
+              prepend-icon="mdi-magic-staff"
+              :loading="appraising === item.id"
+              @click="onAppraise(item)"
+            >估價</v-btn>
+            <v-spacer />
+            <v-btn
+              size="x-small"
+              variant="text"
+              icon="mdi-close"
+              @click="onDismiss(item)"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+    </div>
+  </v-container>
+</template>
+
+<script setup>
+import { ref, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useKeywordsStore } from '../stores/keywords.js';
+import { useAppraisalsStore } from '../stores/appraisals.js';
+
+const router = useRouter();
+const store = useKeywordsStore();
+const appraisals = useAppraisalsStore();
+const days = ref(3);
+const loading = ref(false);
+const appraising = ref(null);
+
+async function load() {
+  loading.value = true;
+  try { await store.fetchInbox({ days: days.value, force: true }); }
+  finally { loading.value = false; }
+}
+
+async function onAppraise(item) {
+  appraising.value = item.id;
+  try {
+    const localId = await appraisals.submitUrl({
+      url: item.sourceUrl,
+      preview: {
+        imageUrl: item.imageUrl,
+        title: item.title,
+        siteLabel: item.siteLabel,
+        listedPriceJpy: item.priceJpy,
+      },
+    });
+    router.push({ name: 'result', params: { localId } });
+  } catch (err) {
+    alert(`估價失敗：${err.message || err}`);
+  } finally {
+    appraising.value = null;
+  }
+}
+
+async function onDismiss(item) {
+  await store.dismiss(item.id);
+}
+
+onMounted(load);
+watch(days, load);
+</script>
+
+<style scoped>
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.listing-card {
+  overflow: hidden;
+}
+.no-img {
+  aspect-ratio: 1;
+  background: rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+.price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #795548;
+}
+.title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 32px;
+  line-height: 1.3;
+}
+</style>

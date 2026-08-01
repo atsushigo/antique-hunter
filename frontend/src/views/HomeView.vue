@@ -22,19 +22,24 @@
       >
         貼 URL 估價（Mercari / Yahoo Auction / Rakuma）
       </v-btn>
-      <div class="d-flex ga-2 mt-2">
-        <v-btn
-          variant="text"
-          size="small"
-          prepend-icon="mdi-calendar-month"
-          @click="$router.push('/calendar')"
-        >市集日曆</v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          prepend-icon="mdi-star"
-          @click="$router.push('/collection')"
-        >收藏</v-btn>
+      <v-btn
+        v-if="inboxCount > 0"
+        color="secondary"
+        variant="tonal"
+        rounded="xl"
+        block
+        prepend-icon="mdi-inbox"
+        class="mt-2"
+        @click="$router.push('/inbox')"
+      >
+        收件匣 <v-badge :content="inboxCount" color="error" inline class="ms-2" />
+      </v-btn>
+      <div class="d-flex flex-wrap ga-2 mt-2">
+        <v-btn variant="text" size="small" prepend-icon="mdi-calendar-month" @click="$router.push('/calendar')">市集</v-btn>
+        <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
+        <v-btn variant="text" size="small" prepend-icon="mdi-bookmark-multiple" @click="$router.push('/keywords')">追蹤</v-btn>
+        <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
+        <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
       </div>
     </div>
 
@@ -82,14 +87,21 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppraisalsStore } from '../stores/appraisals.js';
+import { useKeywordsStore } from '../stores/keywords.js';
 
 const router = useRouter();
 const store = useAppraisalsStore();
+const keywords = useKeywordsStore();
 
-onMounted(() => store.loadLocal());
+const inboxCount = computed(() => keywords.inboxCount);
+
+onMounted(() => {
+  store.loadLocal();
+  keywords.fetchInbox({ days: 3 }).catch(() => {});
+});
 
 function open(a) {
   router.push({ name: 'result', params: { localId: a.localId } });
