@@ -33,6 +33,22 @@
       </v-card-text>
     </v-card>
 
+    <!-- Jimoty 圖片被 Cloudflare geo-block 時秀提示 -->
+    <v-alert
+      v-if="jmtyImgBlocked && !bannerDismissed"
+      type="warning"
+      density="compact"
+      variant="tonal"
+      closable
+      class="mb-2 mx-1"
+      @click:close="bannerDismissed = true"
+    >
+      <div class="text-caption">
+        <b>Jimoty 圖片被 Cloudflare 擋</b>（你 Mac IP 是 Taiwan）— 解法：關 VPN、切 JP VPN、或裝 Cloudflare Warp。
+        圖片會在 Sam 切 JP IP 時抓一次後 <b>永久 cache</b> 在本地。
+      </div>
+    </v-alert>
+
     <!-- Keyword filter chips -->
     <div v-if="keywordChips.length" class="d-flex align-center flex-wrap ga-1 mb-2 px-1">
       <v-chip
@@ -145,9 +161,9 @@
             class="card-img"
             @error="imgFailed[item.id] = true"
           />
-          <div v-else class="card-img no-img d-flex align-center justify-center flex-column" :title="imgFailed[item.id] ? '圖片被 CDN 擋（VPN 需切 JP 或關掉）' : ''">
-            <div v-if="imgFailed[item.id]" style="font-size:32px">🇯🇵</div>
-            <div v-if="imgFailed[item.id]" class="text-caption text-medium-emphasis mt-1">需 JP IP</div>
+          <div v-else class="card-img no-img d-flex align-center justify-center flex-column" :title="imgFailed[item.id] ? 'Cloudflare geo-block（Taiwan IP 被擋）— 切 JP VPN 可看' : ''">
+            <div v-if="imgFailed[item.id]" style="font-size:28px">🚫</div>
+            <div v-if="imgFailed[item.id]" class="text-caption text-medium-emphasis mt-1">Geo 擋</div>
             <v-icon v-else color="grey" size="32">mdi-image-off</v-icon>
           </div>
           <div class="card-price-overlay">
@@ -212,6 +228,13 @@ const page = ref(1);
 const viewMode = ref(localStorage.getItem('inbox-view-mode') || 'card');
 watch(viewMode, (v) => localStorage.setItem('inbox-view-mode', v));
 const imgFailed = reactive({});
+const bannerDismissed = ref(false);
+const jmtyImgBlocked = computed(() => {
+  const jmty = store.inbox.filter((i) => i.site === 'jimoty' && i.imageUrl);
+  if (!jmty.length) return false;
+  const failed = jmty.filter((i) => imgFailed[i.id]).length;
+  return failed / jmty.length > 0.5; // 過半失敗才秀 banner
+});
 
 const inboxList = computed(() => store.inbox);
 const filtered = useFilteredSorted(inboxList, priceBucket, sortBy, 'firstSeenAt');
