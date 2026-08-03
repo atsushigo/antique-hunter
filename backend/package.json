@@ -11,6 +11,7 @@
     "db:reseed:events": "sequelize-cli db:seed --seed 20260801000001-market-events.cjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "auth:login": "node scripts/auth-login.mjs",
+    "test:smoke": "bash scripts/smoke-test.sh",
     "lint": "eslint ."
   },
   "dependencies": {
