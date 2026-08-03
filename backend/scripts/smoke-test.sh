@@ -88,28 +88,33 @@ for kw in パジェロ ハイラックスサーフ エクスプローラ; do
 done
 
 echo ""
-echo "== 收件夾內容合理性 =="
-# 全部項目 title 都應該含至少一個 keyword 且是 car 相關（Jimoty URL 含 /car- OR YA title 有車 marker）
-PROBLEMS=$(curl -sS "$API/keywords/inbox?days=7&limit=200" | /usr/bin/python3 -c "
-import json,sys,re
-d=json.load(sys.stdin)['data']
-CAR_MARKERS = re.compile(r'(万\s*km|万\s*キロ|車検|年式|H\d{1,2}年|平成\d+|令和\d+|20\d\d年|支払.*総額|総額\s*\d+\s*万|走行|4WD|CVT|MT車|AT車|5MT|6MT|本体|実動|名義変更|修復歴)')
-bad=[]
-for i in d:
-  t = (i['title'] or '')
-  is_jmty_car = '/car-' in i['sourceUrl']
-  has_marker = bool(CAR_MARKERS.search(t))
-  if i['site'] == 'jimoty':
-    if not is_jmty_car: bad.append(('jimoty non-car URL', t[:40]))
-  elif not has_marker:
-    bad.append(('YA no marker', t[:40]))
-if bad:
-  for b in bad[:5]: print(f'  ! {b}')
-  print(f'total_bad={len(bad)}')
-else:
-  print('OK')
-")
-[[ "$PROBLEMS" == OK* ]] && pass "所有 listing 皆通過車輛 filter" || fail "有 $PROBLEMS 通過車輛 filter"
+echo "== 收件夾內容合理性（依 keyword categoryHint）=="
+PROBLEMS=$(/usr/bin/python3 << 'PYEOF'
+import json, urllib.request, re
+API = "http://localhost:3000/api"
+def get(u): return json.loads(urllib.request.urlopen(u).read())
+kws = {k['keyword']: k for k in get(f'{API}/keywords')['data']}
+inbox = get(f'{API}/keywords/inbox?days=7&limit=200')['data']
+CAR_MARKERS = re.compile(r'(万\s*km|車検|年式|H\d{1,2}年|平成\d+|令和\d+|20\d\d年|支払.*総額|総額\s*\d+\s*万|走行|4WD|CVT|MT車|AT車|5MT|6MT|本体|実動|名義変更|修復歴)')
+bad = []
+for i in inbox:
+    kw = kws.get(i['keyword'])
+    if not kw: continue
+    hint = kw.get('categoryHint')
+    t = i['title'] or ''
+    is_jmty_car = '/car-' in i['sourceUrl']
+    if hint == 'car':
+        if i['site'] == 'jimoty' and not is_jmty_car:
+            bad.append(f"[{i['keyword']}] jimoty non-car: {t[:40]}")
+        elif i['site'] == 'yahoo_auction' and not CAR_MARKERS.search(t):
+            bad.append(f"[{i['keyword']}] YA no marker: {t[:40]}")
+    elif hint == 'antique':
+        if i['site'] == 'jimoty' and is_jmty_car:
+            bad.append(f"[{i['keyword']}] antique but /car-: {t[:40]}")
+print('OK' if not bad else f'bad={len(bad)}: ' + '; '.join(bad[:3]))
+PYEOF
+)
+[[ "$PROBLEMS" == OK* ]] && pass "listing 都符合 categoryHint" || fail "$PROBLEMS"
 
 echo ""
 echo "==================================="
