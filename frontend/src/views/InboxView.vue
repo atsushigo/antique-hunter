@@ -95,13 +95,15 @@
         @click="onAppraise(item)"
       >
         <v-img
-          v-if="item.imageUrl"
-          :src="item.imageUrl"
+          v-if="item.imageUrl && !imgFailed[item.id]"
+          :src="proxiedImg(item.imageUrl)"
           class="thumb"
           cover
+          @error="imgFailed[item.id] = true"
         />
-        <div v-else class="thumb no-img d-flex align-center justify-center">
-          <v-icon size="20" color="grey">mdi-image-off</v-icon>
+        <div v-else class="thumb no-img d-flex align-center justify-center" :title="imgFailed[item.id] ? '圖片被 CDN 擋（可能 VPN 中）' : ''">
+          <span v-if="imgFailed[item.id]" style="font-size:14px">🇯🇵</span>
+          <v-icon v-else size="20" color="grey">mdi-image-off</v-icon>
         </div>
         <div class="body">
           <div class="line-1">
@@ -136,9 +138,17 @@
         @click="onAppraise(item)"
       >
         <div class="card-img-wrap">
-          <v-img v-if="item.imageUrl" :src="item.imageUrl" cover class="card-img" />
-          <div v-else class="card-img no-img d-flex align-center justify-center">
-            <v-icon color="grey">mdi-image-off</v-icon>
+          <v-img
+            v-if="item.imageUrl && !imgFailed[item.id]"
+            :src="proxiedImg(item.imageUrl)"
+            cover
+            class="card-img"
+            @error="imgFailed[item.id] = true"
+          />
+          <div v-else class="card-img no-img d-flex align-center justify-center flex-column" :title="imgFailed[item.id] ? '圖片被 CDN 擋（VPN 需切 JP 或關掉）' : ''">
+            <div v-if="imgFailed[item.id]" style="font-size:32px">🇯🇵</div>
+            <div v-if="imgFailed[item.id]" class="text-caption text-medium-emphasis mt-1">需 JP IP</div>
+            <v-icon v-else color="grey" size="32">mdi-image-off</v-icon>
           </div>
           <div class="card-price-overlay">
             <span v-if="item.priceJpy === 0 && item.priceLabel">{{ item.priceLabel }}</span>
@@ -181,11 +191,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKeywordsStore } from '../stores/keywords.js';
 import { useAppraisalsStore } from '../stores/appraisals.js';
 import { PRICE_BUCKETS, SORT_OPTIONS, useFilteredSorted } from '../composables/priceFilter.js';
+import { proxiedImg } from '../labels.js';
 
 const router = useRouter();
 const store = useKeywordsStore();
@@ -200,6 +211,7 @@ const pageSize = 24; // 每頁 24 筆（card view 剛好整齊）
 const page = ref(1);
 const viewMode = ref(localStorage.getItem('inbox-view-mode') || 'card');
 watch(viewMode, (v) => localStorage.setItem('inbox-view-mode', v));
+const imgFailed = reactive({});
 
 const inboxList = computed(() => store.inbox);
 const filtered = useFilteredSorted(inboxList, priceBucket, sortBy, 'firstSeenAt');

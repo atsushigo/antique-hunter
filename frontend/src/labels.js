@@ -48,3 +48,18 @@ export function siteBadge(host, sourceUrl) {
   const region = regionOf(host, sourceUrl);
   return region ? `${label} · ${region}` : label;
 }
+
+// 有些 CDN 有 hotlink protection（Jimoty 的 cdn.jmty.jp 對 非-jmty 來源 403）
+// 過走 backend /api/img-proxy 中繼；proxy 有 host 白名單
+const PROXY_HOSTS = ['cdn.jmty.jp', 'auc-pctr.c.yimg.jp', 'auctions.c.yimg.jp', 'wing-auctions.c.yimg.jp', 'asset.fril.jp'];
+export function proxiedImg(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (PROXY_HOSTS.includes(u.hostname)) {
+      const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+      return `${base}/img-proxy?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  } catch { return url; }
+}
