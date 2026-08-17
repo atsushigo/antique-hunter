@@ -17,22 +17,31 @@ export const SITE_LABELS = {
   jimoty: 'Jimoty',
   mercari: 'Mercari',
   rakuma: 'Rakuma',
+  ksi_kankocho: 'KSI 官公庁',
+};
+
+export const SITE_GROUPS = {
+  c2c: { label: 'C2C 個人二手', color: 'primary' },
+  gov_auction: { label: '官公庁拍賣', color: 'secondary' },
 };
 
 export const ALL_SITES_META = [
-  { id: 'yahoo_auction', label: 'Yahoo Auction', supported: true },
-  { id: 'jimoty', label: 'Jimoty', supported: true },
+  // C2C
+  { id: 'yahoo_auction', label: 'Yahoo Auction', group: 'c2c', supported: true },
+  { id: 'jimoty', label: 'Jimoty', group: 'c2c', supported: true },
   {
-    id: 'mercari',
-    label: 'Mercari',
-    supported: false,
-    reason: '站內搜尋需 Playwright（SPA），效能考量停用。URL 貼上估價仍可用。',
+    id: 'mercari', label: 'Mercari', group: 'c2c', supported: false,
+    reason: '站內搜尋需 Playwright（SPA）。URL 貼上估價仍可用。',
   },
   {
-    id: 'rakuma',
-    label: 'Rakuma',
-    supported: false,
-    reason: '站內搜尋需 Playwright（SPA），效能考量停用。URL 貼上估價仍可用。',
+    id: 'rakuma', label: 'Rakuma', group: 'c2c', supported: false,
+    reason: '站內搜尋需 Playwright（SPA）。URL 貼上估價仍可用。',
+  },
+  // 官公庁拍賣（KSI 涵蓋警視庁遺失物 + 国税局公売 + 都道府県公売）
+  // KSI 的 keyword search 不生效（?q= 只是 URL cosmetic），改做獨立 GovAuctionsView 頁面按類別瀏覽
+  {
+    id: 'ksi_kankocho', label: 'KSI 官公庁', group: 'gov_auction', supported: false,
+    reason: 'KSI keyword search 不生效，改成獨立「官公庁瀏覽」view（見首頁）',
   },
 ];
 
@@ -45,6 +54,7 @@ const SEARCH_URL = {
   ],
   mercari: (q) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(q)}&sort=created_time&order=desc&status=on_sale`,
   rakuma: (q) => `https://fril.jp/s?query=${encodeURIComponent(q)}`,
+  ksi_kankocho: (q) => `https://kankocho.jp/search?q=${encodeURIComponent(q)}`,
 };
 
 // 各站已售出/已終了關鍵字 pattern
@@ -53,6 +63,7 @@ const SOLD_PATTERNS = /SOLD\s*OUT|SOLD|売切|売り切|売却済|取引済|取�
 const HTTP_PARSERS = {
   yahoo_auction: parseYahooAuction,
   jimoty: parseJimoty,
+  ksi_kankocho: parseKsi,
 };
 const BROWSER_SCRAPERS = {
   mercari: scrapeMercariBrowser,
@@ -213,6 +224,50 @@ function parseJimoty(html) {
       priceJpy,
       priceLabel,
       raw: null,
+    });
+  }
+  return items;
+}
+
+// ---------- KSI 官公庁オークション (kankocho.jp) ----------
+// Next.js App Router — item 資料在 self.__next_f.push() streaming JSON 內
+// 涵蓋警視庁遺失物 / 国税局公売 / 都道府県公売（統一入口）
+function parseKsi(html) {
+  const items = [];
+  // 抽 RSC streaming chunks
+  const streams = [...html.matchAll(/self\.__next_f\.push\(\[1,"([\s\S]*?)"\]\)/g)];
+  let full = '';
+  for (const s of streams) {
+    try {
+      // 解 JSON 字串 escape
+      full += JSON.parse(`"${s[1]}"`);
+    } catch { /* skip */ }
+  }
+  if (!full) return items;
+
+  // 每個 item 是 {"id":XXX,"auctionId":YYY,"openWay":...,"title":"...","estimateFee":N,...}
+  // 用 regex 抓每個 item 物件
+  const itemRe = /\{"id":(\d+),"auctionId":(\d+),"openWay":"([^"]+)","printOrder":\d+,"title":"((?:[^"\\]|\\.)*)","estimateFee":(\d+)[\s\S]*?"statusJP":"([^"]+)"[\s\S]*?"government":\{"id":\d+,"name":"([^"]+)"/g;
+  const seen = new Set();
+  let m;
+  while ((m = itemRe.exec(full))) {
+    const id = m[1];
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const auctionId = m[2];
+    const openWay = m[3];
+    const title = m[4].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    const price = Number(m[5]);
+    const statusJP = m[6];
+    const govName = m[7];
+    // 只收「申し込み受付中」和「せり売中」（其他 e.g., 終了 排除）
+    if (!['申し込み受付中', 'せり売中', '入札受付中', '申込受付中'].includes(statusJP)) continue;
+    items.push({
+      sourceUrl: `https://kankocho.jp/items/${id}/`,
+      imageUrl: null, // 圖片在 item 詳細頁 og:image，MVP 不抓
+      title: `${title}（${govName}）`,
+      priceJpy: Number.isFinite(price) ? price : null,
+      priceLabel: openWay === 'AUCTION' ? '起標' : null,
     });
   }
   return items;

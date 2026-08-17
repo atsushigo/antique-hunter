@@ -12,7 +12,7 @@ pass() { echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
 echo "== Frontend routes =="
-for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty; do
+for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty /gov-auctions; do
   code=$(curl -sS -o /dev/null -w "%{http_code}" "$WEB$path")
   [ "$code" = "200" ] && pass "GET $path → 200" || fail "GET $path → $code"
 done
@@ -47,6 +47,8 @@ check_json "GET /appraisal/collection"       "$API/appraisal/collection"        
 check_json "GET /search?q=昭和"              "$API/search?q=%E6%98%AD%E5%92%8C" "isinstance(d['data']['groups'],list)"
 check_json "GET /auth/status (4 站)"         "$API/auth/status"                 "len(d['data'])==4"
 check_json "GET /jimoty/favorites (需 auth)" "$API/jimoty/favorites"            "isinstance(d.get('data'),list)"
+check_json "GET /gov-auctions?category=car"  "$API/gov-auctions?category=car"   "isinstance(d['data'],list) and d['total']>=0"
+check_json "GET /gov-auctions?category=general" "$API/gov-auctions?category=general" "isinstance(d['data'],list) and d['total']>=0"
 
 echo ""
 echo "== Pagination logic =="

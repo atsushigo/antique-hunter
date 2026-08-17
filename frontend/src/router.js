@@ -68,6 +68,12 @@ const routes = [
     meta: { title: '我的 Jimoty' },
   },
   {
+    path: '/gov-auctions',
+    name: 'gov-auctions',
+    component: () => import('./views/GovAuctionsView.vue'),
+    meta: { title: '官公庁拍賣' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),
