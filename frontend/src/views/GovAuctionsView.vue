@@ -23,6 +23,26 @@
       <v-tab value="real-estate">🏠 不動產 <span class="ms-1 text-caption">{{ counts['real-estate'] }}</span></v-tab>
     </v-tabs>
 
+    <!-- 拍賣規模 -->
+    <div v-if="stats && stats.totalItems > 0" class="d-flex align-center flex-wrap ga-2 mb-2 px-1 text-caption">
+      <v-chip size="x-small" variant="tonal">共 {{ stats.totalItems }} 件</v-chip>
+      <v-chip size="x-small" variant="tonal">{{ stats.governmentCount }} 政府</v-chip>
+      <v-chip
+        v-for="(n, s) in stats.byStatus"
+        :key="s"
+        size="x-small"
+        variant="tonal"
+        :color="s === '申し込み受付中' ? 'success' : (s === '入札開始待ち' ? 'warning' : undefined)"
+      >{{ s }} {{ n }}</v-chip>
+      <v-spacer />
+      <v-btn-toggle v-model="govFilter" density="compact" color="primary" variant="outlined">
+        <v-btn value="" size="x-small">全部</v-btn>
+        <v-btn v-for="g in stats.topGovernments" :key="g.name" :value="g.name" size="x-small">
+          {{ g.name }} {{ g.count }}
+        </v-btn>
+      </v-btn-toggle>
+    </div>
+
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
     <v-alert v-if="error" type="error" density="compact" class="mb-2">{{ error }}</v-alert>
 
@@ -32,7 +52,7 @@
 
     <div class="list">
       <a
-        v-for="i in items"
+        v-for="i in filteredItems"
         :key="i.id"
         :href="i.sourceUrl"
         target="_blank"
@@ -44,11 +64,14 @@
               <span v-if="i.priceJpy != null">¥{{ i.priceJpy.toLocaleString() }}</span>
               <span v-else class="text-medium-emphasis">—</span>
             </span>
+            <span v-if="i.currentPriceJpy != null && i.currentPriceJpy > i.priceJpy" class="current">
+              → ¥{{ i.currentPriceJpy.toLocaleString() }}
+            </span>
             <span class="title">{{ i.title }}</span>
           </div>
           <div class="line-2">
+            <span class="chip" :class="{ 'chip-warning': i.statusJP === '入札開始待ち' }">{{ i.statusJP }}</span>
             <span class="chip">{{ i.openWayJP }}</span>
-            <span class="chip">{{ i.statusJP }}</span>
             <span class="gov">🏛 {{ i.government }}</span>
           </div>
         </div>
@@ -59,21 +82,29 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { api } from '../api.js';
 
 const tab = ref('car');
 const items = ref([]);
+const stats = ref(null);
 const counts = reactive({ car: 0, general: 0, 'real-estate': 0 });
 const loading = ref(false);
 const error = ref('');
+const govFilter = ref('');
+
+const filteredItems = computed(() =>
+  govFilter.value ? items.value.filter((i) => i.government === govFilter.value) : items.value
+);
 
 async function load() {
   loading.value = true;
   error.value = '';
+  govFilter.value = '';
   try {
     const { data } = await api.get('/gov-auctions', { params: { category: tab.value } });
     items.value = data.data;
+    stats.value = data.stats;
     counts[tab.value] = data.total;
   } catch (err) {
     error.value = err.message || '載入失敗';
@@ -133,6 +164,16 @@ watch(tab, load);
   background: rgba(121, 85, 72, 0.08);
   padding: 1px 6px; border-radius: 3px;
   font-weight: 500;
+}
+.chip-warning {
+  background: rgba(245, 124, 0, 0.15);
+  color: #E65100;
+}
+.current {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E65100;
+  flex-shrink: 0;
 }
 .gov { color: rgba(0, 0, 0, 0.65); }
 </style>

@@ -35,34 +35,63 @@ govAuctionsRouter.get('/', async (req, res, next) => {
     }
     const items = [];
     const seen = new Set();
-    const itemRe = /\{"id":(\d+),"auctionId":(\d+),"openWay":"([^"]+)","printOrder":\d+,"title":"((?:[^"\\]|\\.)*)","estimateFee":(\d+)[\s\S]*?"statusJP":"([^"]+)"[\s\S]*?"government":\{"id":\d+,"name":"([^"]+)"/g;
+    // 簡化：找每個 item 起點後，往後 3000 chars 內用 regex 抽獨立欄位
+    // 不解析完整 JSON，因 RSC data 有 escape 難以 brace-track
+    const idxRe = /\{"id":(\d+),"auctionId":(\d+)/g;
     let m;
-    while ((m = itemRe.exec(full))) {
+    while ((m = idxRe.exec(full))) {
       const id = m[1];
       if (seen.has(id)) continue;
       seen.add(id);
-      const title = m[4].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-      const price = Number(m[5]);
-      const statusJP = m[6];
-      const govName = m[7];
-      if (!['申し込み受付中', 'せり売中', '入札受付中', '申込受付中'].includes(statusJP)) continue;
+      const win = full.slice(m.index, m.index + 3000);
+      const get = (k) => {
+        const mm = win.match(new RegExp(`"${k}":\\s*(null|"(?:[^"\\\\]|\\\\.)*"|\\d+(?:\\.\\d+)?|true|false)`));
+        if (!mm) return null;
+        const v = mm[1];
+        if (v === 'null') return null;
+        if (v.startsWith('"')) return v.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        if (v === 'true') return true;
+        if (v === 'false') return false;
+        return Number(v);
+      };
+      const statusJP = get('statusJP');
+      if (!['申し込み受付中', 'せり売中', '入札受付中', '申込受付中', '入札開始待ち', '入札中'].includes(statusJP)) continue;
+      const openWay = get('openWay');
+      const govMatch = win.match(/"government":\s*\{[^}]*?"name":"([^"]+)"/);
+      const govName = govMatch ? govMatch[1] : '';
       items.push({
         id: Number(id),
         auctionId: Number(m[2]),
-        title,
-        priceJpy: Number.isFinite(price) ? price : null,
-        openWay: m[3],
-        openWayJP: m[3] === 'AUCTION' ? 'せり売' : '入札',
+        title: get('title') || '',
+        priceJpy: get('estimateFee'),
+        currentPriceJpy: get('currentPrice'),
+        openWay,
+        openWayJP: openWay === 'AUCTION' ? 'せり売' : (openWay === 'BOTH' ? 'せり売+入札' : '入札'),
         statusJP,
         government: govName,
         sourceUrl: `https://kankocho.jp/items/${id}/`,
       });
     }
+
+    // 統計：拍賣規模
+    // 註：bidderCount/watchCount 在 anon 頁面永遠回 0（KSI 需登入才顯示），無 login infra，故不用
+    const statusBreak = {};
+    for (const i of items) statusBreak[i.statusJP] = (statusBreak[i.statusJP] || 0) + 1;
+    const govBreak = {};
+    for (const i of items) govBreak[i.government] = (govBreak[i.government] || 0) + 1;
+    const stats = {
+      totalItems: items.length,
+      governmentCount: Object.keys(govBreak).length,
+      byStatus: statusBreak,
+      topGovernments: Object.entries(govBreak).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
+    };
+
     res.json({
       data: items,
       category: cat,
       total: items.length,
-      note: '圖片在物件詳細頁 og:image；本 endpoint 只列標題+起標價+主辦政府',
+      stats,
+      note: '規模 = 該類別當前所有出品；bidder/watch 需登入才看到，未實作',
     });
   } catch (err) { next(err); }
 });
