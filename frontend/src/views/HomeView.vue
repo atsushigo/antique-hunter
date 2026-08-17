@@ -72,7 +72,6 @@
       <v-btn variant="text" size="small" prepend-icon="mdi-calendar-month" @click="$router.push('/calendar')">市集日曆</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-gavel" @click="$router.push('/gov-auctions')">官公庁拍賣</v-btn>
-      <v-btn variant="text" size="small" prepend-icon="mdi-book-open-variant" @click="$router.push('/knowledge')">知識庫</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-account-key" @click="$router.push('/accounts')">帳號</v-btn>

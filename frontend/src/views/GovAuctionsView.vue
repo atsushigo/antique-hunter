@@ -9,38 +9,20 @@
       </v-btn>
     </div>
 
-    <v-card variant="tonal" color="secondary" class="mb-3">
-      <v-card-text class="pa-3 text-caption">
-        <b>KSI 官公庁オークション</b> — 稅金滯納品、遺失物、政府公有財產拍賣。
-        涵蓋警視庁遺失物公売、国税局公売、都道府県公売。
-        起標常 ¥50-100，撿漏空間大。
-      </v-card-text>
-    </v-card>
-
     <v-tabs v-model="tab" density="compact" color="primary" class="mb-2">
       <v-tab value="car">🚗 車輛 <span class="ms-1 text-caption">{{ counts.car }}</span></v-tab>
       <v-tab value="general">📦 一般 <span class="ms-1 text-caption">{{ counts.general }}</span></v-tab>
       <v-tab value="real-estate">🏠 不動產 <span class="ms-1 text-caption">{{ counts['real-estate'] }}</span></v-tab>
     </v-tabs>
 
-    <!-- 拍賣規模 -->
-    <div v-if="stats && stats.totalItems > 0" class="d-flex align-center flex-wrap ga-2 mb-2 px-1 text-caption">
-      <v-chip size="x-small" variant="tonal">共 {{ stats.totalItems }} 件</v-chip>
-      <v-chip size="x-small" variant="tonal">{{ stats.governmentCount }} 政府</v-chip>
-      <v-chip
-        v-for="(n, s) in stats.byStatus"
-        :key="s"
-        size="x-small"
-        variant="tonal"
-        :color="s === '申し込み受付中' ? 'success' : (s === '入札開始待ち' ? 'warning' : undefined)"
-      >{{ s }} {{ n }}</v-chip>
-      <v-spacer />
-      <v-btn-toggle v-model="govFilter" density="compact" color="primary" variant="outlined">
-        <v-btn value="" size="x-small">全部</v-btn>
-        <v-btn v-for="g in stats.topGovernments" :key="g.name" :value="g.name" size="x-small">
+    <!-- 政府 filter（只在 items 多時才秀）-->
+    <div v-if="stats && stats.topGovernments.length > 1" class="mb-2 px-1">
+      <v-chip-group v-model="govFilter" mandatory>
+        <v-chip value="" size="x-small">全部 {{ stats.totalItems }}</v-chip>
+        <v-chip v-for="g in stats.topGovernments" :key="g.name" :value="g.name" size="x-small">
           {{ g.name }} {{ g.count }}
-        </v-btn>
-      </v-btn-toggle>
+        </v-chip>
+      </v-chip-group>
     </div>
 
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
@@ -65,17 +47,33 @@
               <span class="title">{{ i.title }}</span>
             </div>
             <div class="line-2">
-              <span class="chip" :class="{ 'chip-warning': i.statusJP === '入札開始待ち' }">{{ i.statusJP }}</span>
-              <span class="chip">{{ i.openWayJP }}</span>
-              <span class="gov">🏛 {{ i.government }}</span>
+              <span class="gov">{{ i.government }}</span>
+              <span v-if="i.statusJP === '入札開始待ち'" class="chip-warning">開拍前</span>
             </div>
           </div>
         </a>
-        <v-btn size="x-small" variant="text" icon="mdi-book-plus" title="記入知識庫" @click="saveToKnowledge(i)" />
+        <div class="quick-links" @click.stop>
+          <a
+            :href="`https://auctions.yahoo.co.jp/closedsearch/closedsearch?p=${encodeURIComponent(cleanTitle(i.title))}`"
+            target="_blank"
+            title="Yahoo 落札濟（過去成交價參考）"
+            class="ql"
+          >Y!</a>
+          <a
+            :href="`https://jp.mercari.com/search?keyword=${encodeURIComponent(cleanTitle(i.title))}&status=sold_out`"
+            target="_blank"
+            title="Mercari 已售出（市場價參考）"
+            class="ql"
+          >M</a>
+          <a
+            :href="`https://www.google.com/search?q=${encodeURIComponent(cleanTitle(i.title) + ' 中古 相場')}`"
+            target="_blank"
+            title="Google 「XXX 中古 相場」"
+            class="ql"
+          >G</a>
+        </div>
       </div>
     </div>
-
-    <v-snackbar v-model="snackbar" :timeout="3000">{{ snackText }}</v-snackbar>
   </v-container>
 </template>
 
@@ -109,25 +107,16 @@ async function load() {
   } finally { loading.value = false; }
 }
 
-const snackbar = ref(false);
-const snackText = ref('');
-async function saveToKnowledge(item) {
-  try {
-    await api.post('/knowledge', {
-      title: item.title,
-      category: tab.value === 'car' ? 'car' : (tab.value === 'real-estate' ? 'real-estate' : 'general'),
-      sourceUrl: item.sourceUrl,
-      sourceSite: 'kankocho',
-      listingPriceJpy: item.priceJpy,
-      notes: `政府：${item.government}｜狀態：${item.statusJP}｜${item.openWayJP}`,
-      observedAt: new Date().toISOString(),
-    });
-    snackText.value = `已記入知識庫：${item.title.slice(0, 30)}`;
-    snackbar.value = true;
-  } catch (err) {
-    snackText.value = '記入失敗：' + (err.message || err);
-    snackbar.value = true;
-  }
+// 清理 title 拿掉方括號等噪音，讓比價 search 準
+function cleanTitle(t) {
+  return (t || '')
+    .replace(/【[^】]*】/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/（[^）]*）/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
 }
 
 async function preloadCounts() {
@@ -184,20 +173,41 @@ watch(tab, load);
   display: flex; align-items: center; gap: 6px; margin-top: 3px;
   flex-wrap: wrap;
 }
-.chip {
-  background: rgba(121, 85, 72, 0.08);
-  padding: 1px 6px; border-radius: 3px;
-  font-weight: 500;
-}
 .chip-warning {
   background: rgba(245, 124, 0, 0.15);
   color: #E65100;
+  padding: 1px 6px; border-radius: 3px;
+  font-weight: 500;
+  font-size: 10px;
 }
 .current {
   font-size: 13px;
   font-weight: 600;
   color: #E65100;
   flex-shrink: 0;
+}
+.quick-links {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.quick-links .ql {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: white;
+  color: #555;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+.quick-links .ql:hover {
+  background: rgba(121, 85, 72, 0.1);
+  color: #3E2723;
 }
 .gov { color: rgba(0, 0, 0, 0.65); }
 </style>
