@@ -12,7 +12,7 @@ pass() { echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
 echo "== Frontend routes =="
-for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty /gov-auctions /knowledge; do
+for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty /gov-auctions /gov-auctions/guide /knowledge; do
   code=$(curl -sS -o /dev/null -w "%{http_code}" "$WEB$path")
   [ "$code" = "200" ] && pass "GET $path → 200" || fail "GET $path → $code"
 done

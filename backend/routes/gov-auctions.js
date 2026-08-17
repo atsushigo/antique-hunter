@@ -8,6 +8,45 @@ import { AuctionKnowledge } from '../models/AuctionKnowledge.js';
 
 export const govAuctionsRouter = Router();
 
+// auctionId → { entryStart, entryEnd, bidStart, bidEnd } cache（KSI 一回 auction 全 items 共用）
+const auctionDateCache = new Map();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 小時
+
+async function fetchAuctionDates(sampleItemId, auctionId) {
+  const cached = auctionDateCache.get(auctionId);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.dates;
+  try {
+    const h = await fetch(`https://kankocho.jp/items/${sampleItemId}/`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    }).then((r) => r.text());
+    const streams = [...h.matchAll(/self\.__next_f\.push\(\[1,"([\s\S]*?)"\]\)/g)];
+    let full = '';
+    for (const s of streams) { try { full += JSON.parse(`"${s[1]}"`); } catch {} }
+    // 抓 4 個 JP-format 日期：申請開始/終了、入札開始/終了
+    const dates = [...full.matchAll(/2\d{3}年(\d{1,2})月(\d{1,2})日(\d{1,2})時(\d{1,2})分/g)]
+      .map((m) => {
+        const [_, mo, dy, hr, mn] = m;
+        // 假設年份用當前年（或抓原字串前 4 chars）
+        const yr = m[0].slice(0, 4);
+        return `${yr}-${String(mo).padStart(2, '0')}-${String(dy).padStart(2, '0')} ${String(hr).padStart(2, '0')}:${String(mn).padStart(2, '0')}`;
+      });
+    let out = null;
+    if (dates.length >= 4) {
+      out = {
+        entryStart: dates[0],
+        entryEnd: dates[1],
+        bidStart: dates[2],
+        bidEnd: dates[3],
+      };
+    }
+    auctionDateCache.set(auctionId, { dates: out, at: Date.now() });
+    return out;
+  } catch (err) {
+    console.warn('[gov-auctions] fetchAuctionDates failed:', err.message);
+    return null;
+  }
+}
+
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const CATEGORY_URL = {
@@ -79,6 +118,16 @@ govAuctionsRouter.get('/', async (req, res, next) => {
         sourceUrl: `https://kankocho.jp/items/${id}/`,
       });
     }
+
+    // 每 auctionId 抓一次 sample item detail 拿日期（cached）
+    const uniqAuctions = [...new Set(items.map((i) => i.auctionId))];
+    const auctionDates = {};
+    for (const aid of uniqAuctions) {
+      const sample = items.find((i) => i.auctionId === aid);
+      if (sample) auctionDates[aid] = await fetchAuctionDates(sample.id, aid);
+    }
+    // 把日期塞回每個 item
+    for (const i of items) i.auctionDates = auctionDates[i.auctionId] || null;
 
     // 依區域分組
     const byRegion = {};

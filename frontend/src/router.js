@@ -74,6 +74,12 @@ const routes = [
     meta: { title: '官公庁拍賣' },
   },
   {
+    path: '/gov-auctions/guide',
+    name: 'gov-auctions-guide',
+    component: () => import('./views/GovAuctionsGuideView.vue'),
+    meta: { title: '官公庁拍賣手冊' },
+  },
+  {
     path: '/knowledge',
     name: 'knowledge',
     component: () => import('./views/KnowledgeView.vue'),

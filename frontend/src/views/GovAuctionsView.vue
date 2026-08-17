@@ -4,8 +4,8 @@
       <div class="text-h6">官公庁拍賣</div>
       <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" class="ms-1" @click="load" />
       <v-spacer />
-      <v-btn size="x-small" variant="text" href="https://kankocho.jp" target="_blank">
-        KSI 官網 <v-icon size="14" end>mdi-open-in-new</v-icon>
+      <v-btn size="x-small" variant="tonal" color="secondary" prepend-icon="mdi-book-open-page-variant" @click="$router.push('/gov-auctions/guide')">
+        入門手冊
       </v-btn>
     </div>
 
@@ -90,6 +90,9 @@
                 <span class="gov">{{ i.prefecture ? `[${i.prefecture}] ` : '' }}{{ i.government }}</span>
                 <span v-if="i.statusJP === '入札開始待ち'" class="chip-warning">開拍前</span>
               </div>
+              <div v-if="i.auctionDates" class="line-3">
+                📅 参加 ~{{ formatShortDate(i.auctionDates.entryEnd) }} · 入札 {{ formatShortDate(i.auctionDates.bidStart) }}-{{ formatShortDate(i.auctionDates.bidEnd) }}
+              </div>
             </div>
           </a>
           <div class="quick-links" @click.stop>
@@ -152,6 +155,12 @@ function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+function formatShortDate(str) {
+  // "2026-08-18 13:00" → "8/18"
+  if (!str) return '';
+  const m = str.match(/(\d{1,2})-(\d{1,2})/);
+  return m ? `${Number(m[1])}/${Number(m[2])}` : str;
 }
 const ylink = (t) => `https://auctions.yahoo.co.jp/closedsearch/closedsearch?p=${encodeURIComponent(cleanTitle(t))}`;
 const mlink = (t) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(cleanTitle(t))}&status=sold_out`;
@@ -265,6 +274,11 @@ watch(tab, load);
 .case-row { padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
 .case-row:last-child { border: none; }
 .note { color: rgba(0,0,0,0.55); margin-top: 2px; }
+.line-3 {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 2px;
+}
 .current {
   font-size: 13px;
   font-weight: 600;
