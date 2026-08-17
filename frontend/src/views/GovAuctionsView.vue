@@ -51,33 +51,31 @@
     </div>
 
     <div class="list">
-      <a
-        v-for="i in filteredItems"
-        :key="i.id"
-        :href="i.sourceUrl"
-        target="_blank"
-        class="row"
-      >
-        <div class="body">
-          <div class="line-1">
-            <span class="price">
-              <span v-if="i.priceJpy != null">¥{{ i.priceJpy.toLocaleString() }}</span>
-              <span v-else class="text-medium-emphasis">—</span>
-            </span>
-            <span v-if="i.currentPriceJpy != null && i.currentPriceJpy > i.priceJpy" class="current">
-              → ¥{{ i.currentPriceJpy.toLocaleString() }}
-            </span>
-            <span class="title">{{ i.title }}</span>
+      <div v-for="i in filteredItems" :key="i.id" class="row">
+        <a :href="i.sourceUrl" target="_blank" class="body-link">
+          <div class="body">
+            <div class="line-1">
+              <span class="price">
+                <span v-if="i.priceJpy != null">¥{{ i.priceJpy.toLocaleString() }}</span>
+                <span v-else class="text-medium-emphasis">—</span>
+              </span>
+              <span v-if="i.currentPriceJpy != null && i.currentPriceJpy > i.priceJpy" class="current">
+                → ¥{{ i.currentPriceJpy.toLocaleString() }}
+              </span>
+              <span class="title">{{ i.title }}</span>
+            </div>
+            <div class="line-2">
+              <span class="chip" :class="{ 'chip-warning': i.statusJP === '入札開始待ち' }">{{ i.statusJP }}</span>
+              <span class="chip">{{ i.openWayJP }}</span>
+              <span class="gov">🏛 {{ i.government }}</span>
+            </div>
           </div>
-          <div class="line-2">
-            <span class="chip" :class="{ 'chip-warning': i.statusJP === '入札開始待ち' }">{{ i.statusJP }}</span>
-            <span class="chip">{{ i.openWayJP }}</span>
-            <span class="gov">🏛 {{ i.government }}</span>
-          </div>
-        </div>
-        <v-icon size="18" color="grey">mdi-open-in-new</v-icon>
-      </a>
+        </a>
+        <v-btn size="x-small" variant="text" icon="mdi-book-plus" title="記入知識庫" @click="saveToKnowledge(i)" />
+      </div>
     </div>
+
+    <v-snackbar v-model="snackbar" :timeout="3000">{{ snackText }}</v-snackbar>
   </v-container>
 </template>
 
@@ -111,6 +109,27 @@ async function load() {
   } finally { loading.value = false; }
 }
 
+const snackbar = ref(false);
+const snackText = ref('');
+async function saveToKnowledge(item) {
+  try {
+    await api.post('/knowledge', {
+      title: item.title,
+      category: tab.value === 'car' ? 'car' : (tab.value === 'real-estate' ? 'real-estate' : 'general'),
+      sourceUrl: item.sourceUrl,
+      sourceSite: 'kankocho',
+      listingPriceJpy: item.priceJpy,
+      notes: `政府：${item.government}｜狀態：${item.statusJP}｜${item.openWayJP}`,
+      observedAt: new Date().toISOString(),
+    });
+    snackText.value = `已記入知識庫：${item.title.slice(0, 30)}`;
+    snackbar.value = true;
+  } catch (err) {
+    snackText.value = '記入失敗：' + (err.message || err);
+    snackbar.value = true;
+  }
+}
+
 async function preloadCounts() {
   for (const cat of ['car', 'general', 'real-estate']) {
     if (cat === tab.value) continue;
@@ -133,16 +152,21 @@ watch(tab, load);
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 8px 10px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 6px;
   background: #FDFBF7;
-  text-decoration: none;
-  color: inherit;
   transition: background 0.1s;
 }
 .row:hover { background: rgba(121, 85, 72, 0.05); }
+.body-link {
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
 .body { flex: 1; min-width: 0; }
 .line-1 {
   display: flex; align-items: baseline; gap: 8px;

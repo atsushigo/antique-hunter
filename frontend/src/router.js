@@ -74,6 +74,12 @@ const routes = [
     meta: { title: '官公庁拍賣' },
   },
   {
+    path: '/knowledge',
+    name: 'knowledge',
+    component: () => import('./views/KnowledgeView.vue'),
+    meta: { title: '知識庫' },
+  },
+  {
     path: '/camera',
     name: 'camera',
     component: () => import('./views/CameraView.vue'),
