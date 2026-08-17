@@ -2,6 +2,9 @@
 // KSI 的 keyword search 不生效（`?q=` 只是 URL cosmetic），改成 category browse
 
 import { Router } from 'express';
+import { Op } from 'sequelize';
+import { distanceFromHome } from '../data/prefectures.js';
+import { AuctionKnowledge } from '../models/AuctionKnowledge.js';
 
 export const govAuctionsRouter = Router();
 
@@ -59,6 +62,7 @@ govAuctionsRouter.get('/', async (req, res, next) => {
       const openWay = get('openWay');
       const govMatch = win.match(/"government":\s*\{[^}]*?"name":"([^"]+)"/);
       const govName = govMatch ? govMatch[1] : '';
+      const loc = distanceFromHome(govName);
       items.push({
         id: Number(id),
         auctionId: Number(m[2]),
@@ -69,29 +73,58 @@ govAuctionsRouter.get('/', async (req, res, next) => {
         openWayJP: openWay === 'AUCTION' ? 'せり売' : (openWay === 'BOTH' ? 'せり売+入札' : '入札'),
         statusJP,
         government: govName,
+        prefecture: loc.prefecture,
+        region: loc.region,
+        distanceKm: loc.distanceKm,
         sourceUrl: `https://kankocho.jp/items/${id}/`,
       });
     }
 
-    // 統計：拍賣規模
-    // 註：bidderCount/watchCount 在 anon 頁面永遠回 0（KSI 需登入才顯示），無 login infra，故不用
-    const statusBreak = {};
-    for (const i of items) statusBreak[i.statusJP] = (statusBreak[i.statusJP] || 0) + 1;
-    const govBreak = {};
-    for (const i of items) govBreak[i.government] = (govBreak[i.government] || 0) + 1;
+    // 依區域分組
+    const byRegion = {};
+    for (const i of items) {
+      const key = i.region || '未知';
+      if (!byRegion[key]) byRegion[key] = [];
+      byRegion[key].push(i);
+    }
+    // 都道府縣 filter list
+    const prefectureBreak = {};
+    for (const i of items) {
+      if (!i.prefecture) continue;
+      prefectureBreak[i.prefecture] = (prefectureBreak[i.prefecture] || 0) + 1;
+    }
     const stats = {
       totalItems: items.length,
-      governmentCount: Object.keys(govBreak).length,
-      byStatus: statusBreak,
-      topGovernments: Object.entries(govBreak).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
+      byRegion: Object.fromEntries(Object.entries(byRegion).map(([k, v]) => [k, v.length])),
+      prefectures: Object.entries(prefectureBreak).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
     };
+
+    // 相似成功案例 — 從知識庫 filter 有 winning_price + 相同 category
+    const kbCategory = cat === 'car' ? 'car' : cat === 'real-estate' ? 'real-estate' : 'general';
+    const knowledgeCases = await AuctionKnowledge.findAll({
+      where: {
+        category: kbCategory,
+        winningPriceJpy: { [Op.ne]: null },
+        settledAt: { [Op.ne]: null },
+      },
+      order: [['settled_at', 'DESC']],
+      limit: 10,
+      attributes: ['id', 'title', 'listingPriceJpy', 'winningPriceJpy', 'settledAt', 'notes'],
+    });
 
     res.json({
       data: items,
       category: cat,
       total: items.length,
       stats,
-      note: '規模 = 該類別當前所有出品；bidder/watch 需登入才看到，未實作',
+      knowledgeCases: knowledgeCases.map((k) => ({
+        id: k.id,
+        title: k.title,
+        listingPriceJpy: k.listingPriceJpy,
+        winningPriceJpy: k.winningPriceJpy,
+        settledAt: k.settledAt,
+        notes: k.notes,
+      })),
     });
   } catch (err) { next(err); }
 });
