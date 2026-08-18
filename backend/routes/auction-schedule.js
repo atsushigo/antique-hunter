@@ -85,6 +85,8 @@ auctionScheduleRouter.get('/', async (req, res, next) => {
       const auctionUrl = `https://kankocho.jp/items/${meta.sampleItemId}/`;
       const base = {
         source: 'ksi',
+        sourceId: 'ksi',
+        sourceLabel: 'KSI 官公庁',
         auctionId: aid,
         category: meta.category,
         categoryLabel: meta.categoryLabel,

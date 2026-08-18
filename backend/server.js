@@ -16,6 +16,7 @@ import { jimotyRouter } from './routes/jimoty.js';
 import { imgProxyRouter } from './routes/img-proxy.js';
 import { govAuctionsRouter } from './routes/gov-auctions.js';
 import { auctionScheduleRouter } from './routes/auction-schedule.js';
+import { auctionSourcesRouter } from './routes/auction-sources.js';
 import { knowledgeRouter } from './routes/knowledge.js';
 import './models/AuctionKnowledge.js';
 import { startCron } from './cron.js';
@@ -52,6 +53,7 @@ app.use('/api/jimoty', jimotyRouter);
 app.use('/api/img-proxy', imgProxyRouter);
 app.use('/api/gov-auctions', govAuctionsRouter);
 app.use('/api/auction-schedule', auctionScheduleRouter);
+app.use('/api/auction-sources', auctionSourcesRouter);
 app.use('/api/knowledge', knowledgeRouter);
 
 app.get('/api/health', async (req, res) => {

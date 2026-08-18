@@ -10,7 +10,10 @@ build/
 .idea/
 uploads/
 tmp/
-backend/data/
+backend/data/*.sqlite
+backend/data/*.sqlite-journal
+backend/data/img-cache/
+backend/data/sessions/
 *.sqlite
 *.sqlite-journal
 coverage/

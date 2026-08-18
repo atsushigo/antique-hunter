@@ -136,7 +136,7 @@
               <div class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</div>
             </div>
             <div class="text-caption text-medium-emphasis mt-1">
-              🏛 {{ ev.government }} · KSI 官公庁
+              🏛 {{ ev.government }} · {{ ev.sourceLabel || 'KSI 官公庁' }}
             </div>
           </a>
         </template>
@@ -192,7 +192,7 @@
                 <v-spacer />
                 <span class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</span>
               </div>
-              <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.government }} · KSI 官公庁</div>
+              <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.government }} · {{ ev.sourceLabel || 'KSI 官公庁' }}</div>
             </v-card-text>
           </v-card>
         </template>

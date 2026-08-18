@@ -143,40 +143,65 @@
       **結論：撿漏要挑冷門項目 + 能自取的近距離**
     </v-alert>
 
-    <h2>其他補充拍賣管道（本 App 未整合，官方連結自行看）</h2>
+    <h2>各拍賣管道 · 參加方式對照</h2>
     <p class="text-caption text-medium-emphasis">
-      實測後這幾個站要嘛 offline 主辦 / 要嘛只做不動產 / 要嘛跟 KSI 重複，硬接 backend 沒 value。需要時點連結開新分頁自己看。
+      Sam 你關心「怎麼加入 / 買票嗎 / 外國人可否」— 這裡整理所有主流管道的門檻。
+      <b>✅ = App 已整合</b>；其他點連結自己看。
     </p>
-    <ul>
-      <li>
-        <b>BIT 裁判所競売</b>（<a href="https://www.bit.courts.go.jp/" target="_blank">bit.courts.go.jp</a>）—
-        全國 <b>民事執行の不動產法拍</b>，1,600+ 物件。Sam 不做房產可跳過。
-      </li>
-      <li>
-        <b>兵庫縣警察 遺失物公売</b>（<a href="https://www.police.pref.hyogo.lg.jp/traffic/koubai/index.htm" target="_blank">police.pref.hyogo.lg.jp/traffic/koubai/</a>）—
-        家門口的自転車拍賣，但<b>不定期</b>+ 需電話報名（078-321-0293）+ 現地下見預約。
-      </li>
-      <li>
-        <b>大阪府警 遺失物公開情報</b>（<a href="http://www.otoshimono.police.pref.osaka.jp/" target="_blank">otoshimono.police.pref.osaka.jp</a>）—
-        主要是「找丟的東西」查詢頁，未認領後公售獨立辦（不在網）。
-      </li>
-      <li>
-        <b>大阪税関 落札公告</b>（<a href="https://www.customs.go.jp/kyotsu/chotatsu/rakusatsu/r_osaka.htm" target="_blank">customs.go.jp/.../r_osaka</a>）—
-        看**過去成交結果**參考行情用；進行中拍賣主要官報公告+現地入札。
-      </li>
-      <li>
-        <b>神戸税関 事件公告</b>（<a href="https://www.customs.go.jp/kobe/00kohoshitsu_top.htm/event_oshirase_new.htm" target="_blank">customs.go.jp/kobe/…event</a>）—
-        神戸税関事件通知（走私沒收品）。
-      </li>
-      <li>
-        <b>国税庁公売情報</b>（<a href="https://www.koubai.nta.go.jp/" target="_blank">koubai.nta.go.jp</a>）—
-        跟 KSI 大量重複（各國稅局在 KSI 出品），但**額外的滯納品清單**在這裡。
-      </li>
-      <li>
-        <b>まんだらけオークション</b>（<a href="https://ekizo.mandarake.co.jp/auction/item/indexJa.html" target="_blank">ekizo.mandarake.co.jp</a>）—
-        動漫/古書/骨董專場，非政府但業界撿漏名場。
-      </li>
-    </ul>
+
+    <div v-if="sourcesLoading" class="text-caption pa-4">載入中…</div>
+    <div v-else class="source-cards">
+      <v-card
+        v-for="src in sources"
+        :key="src.id"
+        variant="outlined"
+        class="mb-3 source-card"
+        :class="{ 'in-app': src.coveredByApp }"
+      >
+        <v-card-text class="pa-3">
+          <div class="d-flex align-center flex-wrap ga-2 mb-2">
+            <a :href="src.url" target="_blank" class="text-subtitle-1 font-weight-bold source-name">
+              {{ src.name }}
+            </a>
+            <v-chip v-if="src.coveredByApp" size="x-small" color="primary" variant="tonal">✅ App 已整合</v-chip>
+            <v-chip size="x-small" variant="outlined">{{ src.region }}</v-chip>
+            <v-chip size="x-small" variant="outlined" :color="src.method === 'online' ? 'success' : src.method === 'offline' ? 'warning' : 'info'">
+              {{ src.method === 'online' ? '🌐 線上' : src.method === 'offline' ? '📍 現地' : '🌐📍 兩者' }}
+            </v-chip>
+            <v-chip v-if="src.identity.foreignerOk" size="x-small" color="success" variant="tonal">🌏 外國人 OK</v-chip>
+          </div>
+
+          <div class="src-row">
+            <span class="src-label">📦 對象</span>
+            <span>{{ src.coverage }}</span>
+          </div>
+          <div class="src-row">
+            <span class="src-label">💰 費用</span>
+            <span>參加費 {{ src.fee.participation }} · 保証金 {{ src.fee.deposit }} · 付款 {{ src.fee.payment }}</span>
+          </div>
+          <div class="src-row">
+            <span class="src-label">🪪 身分</span>
+            <span>{{ src.identity.idRequired }}{{ src.identity.accountRequired && src.identity.accountRequired !== '無' ? ` · ${src.identity.accountRequired}` : '' }}</span>
+          </div>
+          <div class="src-row">
+            <span class="src-label">🌏 外國人</span>
+            <span>{{ src.identity.foreignerNotes }}</span>
+          </div>
+          <div class="src-row">
+            <span class="src-label">🗓 頻率</span>
+            <span>{{ src.frequency }}</span>
+          </div>
+          <div v-if="src.contact" class="src-row">
+            <span class="src-label">📞 聯絡</span>
+            <span>{{ src.contact }}</span>
+          </div>
+          <div v-if="src.notes" class="src-row src-notes">
+            <span class="src-label">💡 備註</span>
+            <span>{{ src.notes }}</span>
+          </div>
+        </v-card-text>
+      </v-card>
+    </div>
 
     <h2>📚 出處與延伸閱讀</h2>
     <ul>
@@ -192,6 +217,25 @@
     </ul>
   </v-container>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { api } from '../api.js';
+
+const sources = ref([]);
+const sourcesLoading = ref(true);
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/auction-sources');
+    sources.value = data.data;
+  } catch (err) {
+    console.warn('[guide] auction-sources load failed', err);
+  } finally {
+    sourcesLoading.value = false;
+  }
+});
+</script>
 
 <style scoped>
 .guide { max-width: 720px; }
@@ -217,4 +261,42 @@
 }
 .cases li b { color: #795548; font-size: 15px; }
 .cases { padding-left: 0; }
+
+/* Source comparison cards */
+.source-card {
+  border-color: rgba(121, 85, 72, 0.2) !important;
+}
+.source-card.in-app {
+  border-left: 3px solid #795548 !important;
+  background: rgba(121, 85, 72, 0.02);
+}
+.source-name {
+  color: #3E2723 !important;
+  text-decoration: none;
+}
+.source-name:hover {
+  color: #795548 !important;
+  text-decoration: underline;
+}
+.src-row {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3E2723;
+}
+.src-label {
+  flex: 0 0 60px;
+  font-weight: 600;
+  color: #5D4037;
+  font-size: 12px;
+}
+.src-notes {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(121, 85, 72, 0.15);
+  color: #5D4037;
+  font-style: italic;
+}
 </style>

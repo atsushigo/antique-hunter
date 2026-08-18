@@ -50,6 +50,7 @@ check_json "GET /jimoty/favorites (需 auth)" "$API/jimoty/favorites"           
 check_json "GET /gov-auctions?category=car"  "$API/gov-auctions?category=car"   "isinstance(d['data'],list) and d['total']>=0"
 check_json "GET /gov-auctions?category=general" "$API/gov-auctions?category=general" "isinstance(d['data'],list) and d['total']>=0"
 check_json "GET /knowledge"                  "$API/knowledge"                   "isinstance(d['data'],list) and 'stats' in d"
+check_json "GET /auction-sources (8 站)"     "$API/auction-sources"             "d['count']>=8 and any(s['id']=='ksi' for s in d['data'])"
 
 echo ""
 echo "== Pagination logic =="
