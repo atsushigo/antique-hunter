@@ -7,7 +7,8 @@
     <div class="text-h5 mb-3">KSI 官公庁オークション 入門手冊</div>
 
     <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-      Sam 你的位置：<b>兵庫尼崎（武庫川団地）</b> — 建議先看 20km 內兵庫縣拍賣品，能自取省運費。
+      [redacted]；距離取最小值 +（武）/（通）標記。
+      有車 → 20-50km 內都可自取，省 ¥3-10k 運費。
     </v-alert>
 
     <h2>這是什麼？</h2>
@@ -141,6 +142,41 @@
       「熱門物件價格競爭激烈，加上運費最後常比 Yahoo 拍賣還貴」→
       **結論：撿漏要挑冷門項目 + 能自取的近距離**
     </v-alert>
+
+    <h2>其他補充拍賣管道（本 App 未整合，官方連結自行看）</h2>
+    <p class="text-caption text-medium-emphasis">
+      實測後這幾個站要嘛 offline 主辦 / 要嘛只做不動產 / 要嘛跟 KSI 重複，硬接 backend 沒 value。需要時點連結開新分頁自己看。
+    </p>
+    <ul>
+      <li>
+        <b>BIT 裁判所競売</b>（<a href="https://www.bit.courts.go.jp/" target="_blank">bit.courts.go.jp</a>）—
+        全國 <b>民事執行の不動產法拍</b>，1,600+ 物件。Sam 不做房產可跳過。
+      </li>
+      <li>
+        <b>兵庫縣警察 遺失物公売</b>（<a href="https://www.police.pref.hyogo.lg.jp/traffic/koubai/index.htm" target="_blank">police.pref.hyogo.lg.jp/traffic/koubai/</a>）—
+        家門口的自転車拍賣，但<b>不定期</b>+ 需電話報名（078-321-0293）+ 現地下見預約。
+      </li>
+      <li>
+        <b>大阪府警 遺失物公開情報</b>（<a href="http://www.otoshimono.police.pref.osaka.jp/" target="_blank">otoshimono.police.pref.osaka.jp</a>）—
+        主要是「找丟的東西」查詢頁，未認領後公售獨立辦（不在網）。
+      </li>
+      <li>
+        <b>大阪税関 落札公告</b>（<a href="https://www.customs.go.jp/kyotsu/chotatsu/rakusatsu/r_osaka.htm" target="_blank">customs.go.jp/.../r_osaka</a>）—
+        看**過去成交結果**參考行情用；進行中拍賣主要官報公告+現地入札。
+      </li>
+      <li>
+        <b>神戸税関 事件公告</b>（<a href="https://www.customs.go.jp/kobe/00kohoshitsu_top.htm/event_oshirase_new.htm" target="_blank">customs.go.jp/kobe/…event</a>）—
+        神戸税関事件通知（走私沒收品）。
+      </li>
+      <li>
+        <b>国税庁公売情報</b>（<a href="https://www.koubai.nta.go.jp/" target="_blank">koubai.nta.go.jp</a>）—
+        跟 KSI 大量重複（各國稅局在 KSI 出品），但**額外的滯納品清單**在這裡。
+      </li>
+      <li>
+        <b>まんだらけオークション</b>（<a href="https://ekizo.mandarake.co.jp/auction/item/indexJa.html" target="_blank">ekizo.mandarake.co.jp</a>）—
+        動漫/古書/骨董專場，非政府但業界撿漏名場。
+      </li>
+    </ul>
 
     <h2>📚 出處與延伸閱讀</h2>
     <ul>

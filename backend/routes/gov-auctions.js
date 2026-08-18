@@ -115,6 +115,7 @@ govAuctionsRouter.get('/', async (req, res, next) => {
         prefecture: loc.prefecture,
         region: loc.region,
         distanceKm: loc.distanceKm,
+        nearestHome: loc.nearestHome,
         sourceUrl: `https://kankocho.jp/items/${id}/`,
       });
     }

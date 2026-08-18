@@ -84,8 +84,9 @@
                 <span class="title">{{ i.title }}</span>
               </div>
               <div class="line-2">
-                <span v-if="i.distanceKm != null" class="dist" :class="distClass(i.distanceKm)">
-                  📍 {{ i.distanceKm }}km
+                <span v-if="i.distanceKm != null" class="dist" :class="distClass(i.distanceKm)"
+                  :title="i.nearestHome ? `離${i.nearestHome}最近` : ''">
+                  📍 {{ i.distanceKm }}km<span v-if="i.nearestHome" class="near-home">({{ i.nearestHome === '通天閣' ? '通' : '武' }})</span>
                 </span>
                 <span class="gov">{{ i.prefecture ? `[${i.prefecture}] ` : '' }}{{ i.government }}</span>
                 <span v-if="i.statusJP === '入札開始待ち'" class="chip-warning">開拍前</span>
@@ -271,6 +272,7 @@ watch(tab, load);
 .dist-near { color: #2E7D32; background: rgba(46, 125, 50, 0.1); }
 .dist-mid { color: #E65100; background: rgba(230, 81, 0, 0.08); }
 .dist-far { color: rgba(0, 0, 0, 0.5); background: rgba(0, 0, 0, 0.04); }
+.near-home { font-weight: 400; margin-left: 2px; opacity: 0.65; }
 .case-row { padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
 .case-row:last-child { border: none; }
 .note { color: rgba(0,0,0,0.55); margin-top: 2px; }
