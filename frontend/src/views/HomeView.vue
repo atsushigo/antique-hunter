@@ -1,5 +1,10 @@
 <template>
   <v-container class="px-3 pt-4">
+    <!-- Tagline：新用戶第一眼知道這 app 幹嘛 -->
+    <div class="text-caption text-medium-emphasis mb-3 px-1">
+      📷 拍 → AI 估價 · 🔔 追蹤新上架 · ⚖ 官公庁拍賣（日本挖寶）
+    </div>
+
     <!-- 3 個主要功能大卡 -->
     <div class="d-flex flex-column ga-3">
       <v-card
@@ -49,7 +54,7 @@
               <v-chip
                 v-if="inboxCount > 0"
                 size="x-small"
-                color="error"
+                color="secondary"
                 variant="flat"
               >{{ inboxCount }} 新</v-chip>
             </div>

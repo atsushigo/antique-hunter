@@ -1,8 +1,7 @@
 <template>
   <v-container class="px-3 pb-16">
     <div class="d-flex align-center mb-2">
-      <div class="text-h6">官公庁拍賣</div>
-      <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" class="ms-1" @click="load" />
+      <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" @click="load" />
       <v-spacer />
       <v-btn size="x-small" variant="tonal" color="secondary" prepend-icon="mdi-book-open-page-variant" @click="$router.push('/gov-auctions/guide')">
         入門手冊
@@ -85,7 +84,7 @@
               </div>
               <div class="line-2">
                 <span v-if="i.distanceKm != null" class="dist" :class="distClass(i.distanceKm)"
-                  :title="i.nearestHome ? `離${i.nearestHome}最近` : ''">
+                  :title="i.nearestHome ? `離「${i.nearestHome}」最近（自取距離）` : '自取距離'">
                   📍 {{ i.distanceKm }}km<span v-if="i.nearestHome" class="near-home">({{ i.nearestHome === '通天閣' ? '通' : '武' }})</span>
                 </span>
                 <span class="gov">{{ i.prefecture ? `[${i.prefecture}] ` : '' }}{{ i.government }}</span>
@@ -97,9 +96,9 @@
             </div>
           </a>
           <div class="quick-links" @click.stop>
-            <a :href="ylink(i.title)" target="_blank" title="Yahoo 落札濟" class="ql">Y!</a>
-            <a :href="mlink(i.title)" target="_blank" title="Mercari 已售出" class="ql">M</a>
-            <a :href="glink(i.title)" target="_blank" title="Google 相場" class="ql">G</a>
+            <a :href="ylink(i.title)" target="_blank" title="Yahoo 拍賣過去成交價" class="ql">Y!</a>
+            <a :href="mlink(i.title)" target="_blank" title="Mercari 已售出行情" class="ql">M</a>
+            <a :href="glink(i.title)" target="_blank" title="Google 中古行情" class="ql">G</a>
           </div>
         </div>
       </template>

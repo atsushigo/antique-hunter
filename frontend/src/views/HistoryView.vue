@@ -1,7 +1,6 @@
 <template>
   <v-container class="px-2 pb-16">
     <div class="d-flex align-center mb-2 px-1">
-      <div class="text-h6">鑑定歷史</div>
       <v-spacer />
       <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
         <v-btn :value="7" size="x-small">7 天</v-btn>

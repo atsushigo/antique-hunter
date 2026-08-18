@@ -1,10 +1,8 @@
 <template>
   <v-container class="px-3 pb-16">
-    <div class="d-flex align-center mb-2">
-      <div class="text-h6">自動追蹤新上架</div>
+    <div v-if="store.inbox.length" class="d-flex align-center mb-2">
       <v-spacer />
       <v-btn
-        v-if="store.inbox.length"
         color="secondary"
         variant="tonal"
         size="small"

@@ -1,7 +1,5 @@
 <template>
   <v-container class="px-2 pb-16">
-    <div class="text-h6 mb-2 px-1">即時搜尋</div>
-
     <v-text-field
       v-model="q"
       label="關鍵字（Yahoo Auction + Jimoty 同時搜）"

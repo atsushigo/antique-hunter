@@ -1,8 +1,7 @@
 <template>
   <v-container class="px-3 pb-16">
     <div class="d-flex align-center mb-2">
-      <div class="text-h6">知識庫</div>
-      <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" class="ms-1" @click="load" />
+      <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" @click="load" />
       <v-spacer />
       <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openEditor()">新增</v-btn>
     </div>

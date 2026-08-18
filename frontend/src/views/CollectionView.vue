@@ -1,7 +1,6 @@
 <template>
   <v-container class="px-3 pb-16">
-    <div class="d-flex align-center mb-2">
-      <div class="text-h6">收藏</div>
+    <div v-if="list.length" class="d-flex align-center mb-2">
       <v-spacer />
       <div class="text-caption text-medium-emphasis">{{ list.length }} 件</div>
     </div>
@@ -9,8 +8,15 @@
     <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-2" />
     <v-alert v-if="error" type="error" density="compact" class="mb-2">{{ error }}</v-alert>
 
-    <div v-if="!loading && !list.length" class="text-caption text-medium-emphasis text-center pa-8">
-      還沒有收藏，在鑑定結果頁按 ★ 加入
+    <div v-if="!loading && !list.length" class="text-center pa-8">
+      <v-icon size="48" color="grey">mdi-star-outline</v-icon>
+      <div class="text-body-2 mt-2 text-medium-emphasis">還沒有收藏</div>
+      <div class="text-caption text-medium-emphasis mt-1 mb-3">
+        鑑定完喜歡的物件按 ★ 就會存到這裡
+      </div>
+      <v-btn color="primary" variant="tonal" prepend-icon="mdi-camera" @click="$router.push('/camera')">
+        去拍一張看看
+      </v-btn>
     </div>
 
     <v-card

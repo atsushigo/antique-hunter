@@ -2,7 +2,11 @@
   <div class="preview-wrap">
     <img v-if="src" :src="src" alt="preview" class="preview-img" />
     <div v-else class="preview-empty text-medium-emphasis">
-      <v-icon size="48">mdi-image-off-outline</v-icon>
+      <v-icon size="56" color="grey-lighten-1">mdi-image-plus</v-icon>
+      <div class="text-caption mt-3 text-center px-4">
+        拍陶器 / 鐘錶 / 漫畫 / 老家具 / 相機<br>
+        AI 判斷是否古董 + 估價範圍
+      </div>
     </div>
   </div>
 </template>
@@ -29,8 +33,10 @@ defineProps({ src: { type: String, default: null } });
 }
 .preview-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
+  line-height: 1.5;
 }
 </style>

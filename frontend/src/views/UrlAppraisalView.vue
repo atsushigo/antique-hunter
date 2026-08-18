@@ -1,7 +1,6 @@
 <template>
   <v-container class="px-3 pb-16">
-    <div class="text-h6 mb-1">URL 估價</div>
-    <div class="text-caption text-medium-emphasis mb-3">
+    <div class="text-caption text-medium-emphasis mb-2 px-1">
       支援 Mercari / Yahoo Auction / Rakuma / Jimoty 商品頁
     </div>
 

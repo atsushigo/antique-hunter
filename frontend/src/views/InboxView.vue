@@ -1,13 +1,11 @@
 <template>
   <v-container class="px-2 pb-16">
     <div class="d-flex align-center mb-2 px-1">
-      <div class="text-h6">收件匣</div>
       <v-btn
         size="x-small"
         variant="text"
         icon="mdi-refresh"
         :loading="loading"
-        class="ms-1"
         @click="load"
       />
       <v-spacer />
@@ -139,8 +137,8 @@
           </div>
         </div>
         <div class="actions" @click.stop>
-          <v-btn size="x-small" variant="tonal" icon="mdi-magic-staff" :loading="appraising === item.id" @click="onAppraise(item)" />
-          <v-btn size="x-small" variant="text" icon="mdi-close" @click="onDismiss(item)" />
+          <v-btn size="x-small" variant="tonal" icon="mdi-magic-staff" title="送 AI 鑑定" :loading="appraising === item.id" @click="onAppraise(item)" />
+          <v-btn size="x-small" variant="text" icon="mdi-close" title="從收件匣移除（不影響原站）" @click="onDismiss(item)" />
         </div>
       </div>
     </div>
@@ -176,6 +174,7 @@
             size="x-small"
             variant="flat"
             icon="mdi-close"
+            title="從收件匣移除（不影響原站）"
             @click.stop="onDismiss(item)"
           />
         </div>

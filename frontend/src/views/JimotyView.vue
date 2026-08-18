@@ -1,7 +1,6 @@
 <template>
   <v-container class="px-3 pb-16">
     <div class="d-flex align-center mb-2">
-      <div class="text-h6">我的 Jimoty</div>
       <v-spacer />
       <v-btn size="x-small" variant="text" @click="$router.push('/accounts')">帳號</v-btn>
     </div>

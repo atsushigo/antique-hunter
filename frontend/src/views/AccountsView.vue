@@ -1,7 +1,6 @@
 <template>
   <v-container class="px-3 pb-16">
-    <div class="text-h6 mb-2">帳號連接</div>
-    <div class="text-caption text-medium-emphasis mb-3">
+    <div class="text-caption text-medium-emphasis mb-3 px-1">
       連上帳號後可讀自己的收藏、訊息，代打稿送出訊息。<b>不會自動出價</b>。
     </div>
 
