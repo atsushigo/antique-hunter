@@ -94,12 +94,19 @@
       <v-card v-if="draft">
         <v-card-title>{{ draft.id ? '編輯' : '新增' }}筆記</v-card-title>
         <v-card-text class="pa-3">
+          <!-- Section: 基本 -->
+          <div class="section-label">📝 基本</div>
           <v-text-field v-model="draft.title" label="Title *" variant="outlined" density="compact" required />
           <div class="d-flex ga-2">
             <v-select v-model="draft.category" :items="CATEGORIES" label="類別" variant="outlined" density="compact" clearable style="max-width: 180px" />
             <v-select v-model="draft.sourceSite" :items="SITES" label="來源站別" variant="outlined" density="compact" clearable style="max-width: 180px" />
           </div>
           <v-text-field v-model="draft.sourceUrl" label="來源 URL" variant="outlined" density="compact" clearable />
+
+          <v-divider class="my-3" />
+
+          <!-- Section: 價格 -->
+          <div class="section-label">💰 價格</div>
           <div class="d-flex ga-2">
             <v-text-field v-model.number="draft.listingPriceJpy" label="起標/掛牌價" type="number" variant="outlined" density="compact" />
             <v-text-field v-model.number="draft.myAppraisalLowJpy" label="我估最低" type="number" variant="outlined" density="compact" />
@@ -109,6 +116,11 @@
             <v-text-field v-model.number="draft.winningPriceJpy" label="實際成交價（拍完再填）" type="number" variant="outlined" density="compact" />
             <v-checkbox v-model="draft.didIBid" label="我有出價" hide-details density="compact" />
           </div>
+
+          <v-divider class="my-3" />
+
+          <!-- Section: 標記 & 筆記 -->
+          <div class="section-label">🏷 標記 & 筆記</div>
           <v-text-field v-model="draft.tagsStr" label="Tags（逗號分隔）" placeholder="パジェロ,V4,4WD" variant="outlined" density="compact" />
           <v-textarea v-model="draft.notes" label="筆記" variant="outlined" density="compact" rows="3" auto-grow />
         </v-card-text>
@@ -215,5 +227,12 @@ onMounted(load);
   background: rgba(0, 0, 0, 0.03);
   border-radius: 4px;
   margin-top: 4px;
+}
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5D4037;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 </style>

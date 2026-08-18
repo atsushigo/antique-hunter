@@ -62,10 +62,7 @@
                   @click="appraise(it)"
                 />
               </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ it.region }} · {{ it.category === 'car' ? '車輛' : '物件' }}
-              </div>
-              <div class="title text-caption font-weight-medium">
+              <div class="title text-caption font-weight-medium" :title="`${it.region} · ${it.category === 'car' ? '車輛' : '物件'}`">
                 {{ it.title || '(無標題)' }}
               </div>
             </v-card-text>
@@ -89,12 +86,13 @@
           <v-card-text class="pa-3">
             <div class="d-flex align-center mb-1">
               <div class="text-subtitle-2 font-weight-medium flex-grow-1">{{ p.title || '(無標題)' }}</div>
-              <v-chip v-if="p.isClosed" size="x-small" color="grey" variant="tonal">已結束</v-chip>
+              <span v-if="p.priceJpy" class="post-price">¥{{ p.priceJpy.toLocaleString() }}</span>
+              <v-chip v-if="p.isClosed" size="x-small" color="grey" variant="tonal" class="ms-2">已結束</v-chip>
             </div>
-            <div class="text-caption text-medium-emphasis">
-              <span v-if="p.priceJpy" class="me-2">¥{{ p.priceJpy.toLocaleString() }}</span>
-              <span class="me-2">{{ p.region }} · {{ p.category === 'car' ? '車輛' : '物件' }}</span>
-              <v-icon size="12" class="ms-1 me-1">mdi-message</v-icon>{{ p.inquiryCount }}
+            <div class="text-caption text-medium-emphasis d-flex align-center">
+              <span>{{ p.region }}</span>
+              <v-spacer />
+              <v-icon size="12" class="me-1">mdi-message</v-icon>{{ p.inquiryCount }}
               <v-icon size="12" class="ms-2 me-1">mdi-star</v-icon>{{ p.favoriteCount }}
             </div>
           </v-card-text>
@@ -182,5 +180,6 @@ onMounted(() => {
   overflow: hidden; min-height: 32px; line-height: 1.3;
 }
 .post-card { cursor: pointer; }
+.post-price { font-size: 14px; font-weight: 700; color: #795548; }
 .listing-card.is-sold { opacity: 0.55; }
 </style>

@@ -11,14 +11,9 @@
         @click="load"
       />
       <v-spacer />
-      <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" variant="outlined" class="me-2">
+      <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" variant="outlined">
         <v-btn value="card" size="x-small" icon="mdi-view-grid" />
         <v-btn value="list" size="x-small" icon="mdi-view-list" />
-      </v-btn-toggle>
-      <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
-        <v-btn :value="1" size="x-small">今日</v-btn>
-        <v-btn :value="3" size="x-small">3 天</v-btn>
-        <v-btn :value="7" size="x-small">週</v-btn>
       </v-btn-toggle>
     </div>
 
@@ -69,7 +64,7 @@
       </v-chip>
     </div>
 
-    <!-- 價格 + 排序 filter -->
+    <!-- 價格 + 排序 + 天數 filter -->
     <div class="d-flex align-center flex-wrap ga-1 mb-2 px-1">
       <v-chip
         v-for="b in PRICE_BUCKETS"
@@ -80,8 +75,13 @@
         @click="priceBucket = b.id"
       >{{ b.label }}</v-chip>
       <v-spacer />
-      <v-btn-toggle v-model="sortBy" mandatory density="compact" color="primary" variant="outlined">
+      <v-btn-toggle v-model="sortBy" mandatory density="compact" color="primary" variant="outlined" class="me-1">
         <v-btn v-for="s in SORT_OPTIONS" :key="s.id" :value="s.id" size="x-small">{{ s.label }}</v-btn>
+      </v-btn-toggle>
+      <v-btn-toggle v-model="days" mandatory density="compact" color="primary" variant="outlined">
+        <v-btn :value="1" size="x-small">日</v-btn>
+        <v-btn :value="3" size="x-small">3d</v-btn>
+        <v-btn :value="7" size="x-small">週</v-btn>
       </v-btn-toggle>
     </div>
 

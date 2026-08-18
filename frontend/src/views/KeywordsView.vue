@@ -29,65 +29,65 @@
       </v-card-text>
     </v-card>
 
-    <!-- 加關鍵字 -->
-    <v-card variant="outlined" class="mb-3">
-      <v-card-text class="pa-3">
-        <div class="text-subtitle-2 font-weight-medium mb-2">
-          <v-icon size="18" class="me-1">mdi-plus-circle</v-icon>加新的追蹤條件
-        </div>
-        <v-text-field
-          v-model="newKw"
-          label="關鍵字"
-          placeholder="如：昭和 陶器、Rolex 不明、祖父の遺品、レトロ 眼鏡"
-          variant="outlined"
-          density="comfortable"
-          hide-details
-          @keyup.enter="addKeyword"
-        />
-        <div class="mt-2">
-          <div class="text-caption text-medium-emphasis mb-1">查哪些站（點按選/取消）：</div>
-          <div class="d-flex align-center flex-wrap ga-2">
-            <v-chip
-              v-for="s in supportedSites"
-              :key="s.id"
-              size="small"
-              :color="s.supported && newSites.includes(s.id) ? 'primary' : undefined"
-              :variant="s.supported && newSites.includes(s.id) ? 'flat' : 'outlined'"
-              :disabled="!s.supported"
-              @click="onSiteChipClick(s)"
-            >
-              <v-icon v-if="!s.supported" size="14" start>mdi-lock</v-icon>
-              <v-icon v-else-if="s.note" size="12" start>mdi-clock-outline</v-icon>
-              {{ s.label }}
-            </v-chip>
+    <!-- 加關鍵字 dialog -->
+    <v-dialog v-model="addDialog" max-width="480">
+      <v-card>
+        <v-card-title class="text-subtitle-1 font-weight-bold">
+          <v-icon class="me-2">mdi-plus-circle</v-icon>加新的追蹤條件
+        </v-card-title>
+        <v-card-text class="pt-2">
+          <v-text-field
+            v-model="newKw"
+            label="關鍵字"
+            placeholder="如：昭和 陶器、Rolex 不明、祖父の遺品"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            hide-details
+            @keyup.enter="addKeyword"
+          />
+          <div class="mt-3">
+            <div class="text-caption text-medium-emphasis mb-1">查哪些站：</div>
+            <div class="d-flex align-center flex-wrap ga-2">
+              <v-chip
+                v-for="s in supportedSites"
+                :key="s.id"
+                size="small"
+                :color="s.supported && newSites.includes(s.id) ? 'primary' : undefined"
+                :variant="s.supported && newSites.includes(s.id) ? 'flat' : 'outlined'"
+                :disabled="!s.supported"
+                @click="onSiteChipClick(s)"
+              >
+                <v-icon v-if="!s.supported" size="14" start>mdi-lock</v-icon>
+                <v-icon v-else-if="s.note" size="12" start>mdi-clock-outline</v-icon>
+                {{ s.label }}
+              </v-chip>
+            </div>
+            <div v-if="siteNotes.length" class="text-caption text-medium-emphasis mt-2">
+              <div v-for="n in siteNotes" :key="n">⏱ {{ n }}</div>
+            </div>
+            <div v-if="disabledReason" class="text-caption text-warning mt-2">
+              ⚠️ {{ disabledReason }}
+            </div>
           </div>
-          <div v-if="siteNotes.length" class="text-caption text-medium-emphasis mt-2">
-            <div v-for="n in siteNotes" :key="n">⏱ {{ n }}</div>
+          <div class="text-caption text-medium-emphasis mt-3">
+            💡 撿漏詞：不明・詳細不明・祖父の遺品・昭和レトロ・まとめて
           </div>
-          <div v-if="disabledReason" class="text-caption text-warning mt-2">
-            ⚠️ {{ disabledReason }}
-          </div>
-        </div>
-        <div class="d-flex justify-end mt-3">
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="text" @click="addDialog = false">取消</v-btn>
+          <v-spacer />
           <v-btn
             color="primary"
             :disabled="!newKw || !newSites.length"
             :loading="adding"
             @click="addKeyword"
           >
-            <v-icon start>mdi-plus</v-icon>加入並立即查一次
+            <v-icon start>mdi-plus</v-icon>加入並立即查
           </v-btn>
-        </div>
-        <div class="text-caption text-medium-emphasis mt-2">
-          💡 撿漏關鍵字建議：
-          <span class="me-2">「不明」</span>
-          <span class="me-2">「詳細不明」</span>
-          <span class="me-2">「祖父の遺品」</span>
-          <span class="me-2">「昭和レトロ」</span>
-          <span class="me-2">「まとめて」</span>
-        </div>
-      </v-card-text>
-    </v-card>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-snackbar v-model="snackbar" :color="snackColor" :timeout="4000" location="top">
       {{ snackText }}
@@ -99,8 +99,12 @@
     <v-progress-linear v-if="store.loading" indeterminate color="primary" height="2" class="mb-2" />
 
     <!-- 清單 -->
-    <div v-if="!store.list.length && !store.loading" class="text-caption text-medium-emphasis text-center pa-8">
-      還沒有追蹤條件，加一個試試 👆
+    <div v-if="!store.list.length && !store.loading" class="text-center pa-8">
+      <v-icon size="48" color="grey">mdi-magnify</v-icon>
+      <div class="text-body-2 mt-2 text-medium-emphasis">還沒有追蹤條件</div>
+      <v-btn class="mt-3" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="openAddDialog">
+        加第一個關鍵字
+      </v-btn>
     </div>
 
     <div class="text-caption text-medium-emphasis mb-1" v-if="store.list.length">
@@ -200,6 +204,17 @@
         </v-expand-transition>
       </v-card-text>
     </v-card>
+
+    <!-- FAB 加關鍵字（列表非空時才顯示，空狀態已有 CTA button）-->
+    <v-btn
+      v-if="store.list.length"
+      icon="mdi-plus"
+      color="primary"
+      size="large"
+      class="fab-add"
+      elevation="4"
+      @click="openAddDialog"
+    />
   </v-container>
 </template>
 
@@ -212,8 +227,16 @@ const newKw = ref('');
 const newSites = ref(['yahoo_auction', 'jimoty']);
 const running = reactive(new Set());
 const adding = ref(false);
+const addDialog = ref(false);
 const excludeOpen = reactive({});
 const excludeDraft = reactive({});
+
+function openAddDialog() {
+  newKw.value = '';
+  newSites.value = ['yahoo_auction', 'jimoty'];
+  disabledReason.value = '';
+  addDialog.value = true;
+}
 
 const CATEGORIES = [
   { id: null, label: '類別：不限', hint: '不做類別過濾' },
@@ -297,6 +320,7 @@ async function addKeyword() {
   try {
     const kw = await store.create({ keyword: newKw.value.trim(), sites: newSites.value });
     newKw.value = '';
+    addDialog.value = false;
     // auto-run
     const summary = await store.run(kw.id);
     lastRunSummary.value = summary;
@@ -346,4 +370,10 @@ onMounted(() => {
 
 <style scoped>
 .flow-card { border-left: 3px solid rgb(var(--v-theme-secondary)); }
+.fab-add {
+  position: fixed;
+  right: 16px;
+  bottom: 72px; /* 避開 BottomNav */
+  z-index: 5;
+}
 </style>

@@ -10,10 +10,10 @@
       </v-btn-toggle>
     </div>
 
-    <!-- Summary strip -->
+    <!-- Summary strip：只留 3 個核心數字 -->
     <v-card v-if="stats" variant="tonal" class="mb-3 stats-card">
       <v-card-text class="pa-3">
-        <div class="d-flex flex-wrap ga-3 align-baseline">
+        <div class="d-flex align-baseline justify-space-around">
           <div class="stat">
             <div class="num">{{ stats.total }}</div>
             <div class="lbl">總鑑定</div>
@@ -23,33 +23,39 @@
             <div class="num" style="color:#2E7D32">{{ stats.byVerdict.low }}</div>
             <div class="lbl">撿漏機會</div>
           </div>
-          <div class="stat">
-            <div class="num" style="color:#F57C00">{{ stats.byVerdict.high }}</div>
-            <div class="lbl">掛牌偏高</div>
-          </div>
           <v-divider vertical />
-          <div class="stat">
-            <div class="num" style="color:#F57C00">{{ stats.collected }}</div>
-            <div class="lbl">收藏</div>
-          </div>
           <div class="stat">
             <div class="num" style="color:#C62828">{{ stats.byRisk.red }}</div>
             <div class="lbl">仿品風險</div>
           </div>
-        </div>
-        <div v-if="Object.keys(stats.byHost).length" class="mt-2 text-caption">
-          <span class="text-medium-emphasis">來源：</span>
-          <v-chip
-            v-for="(count, host) in stats.byHost"
-            :key="host"
+          <v-btn
+            v-if="Object.keys(stats.byHost).length || stats.collected || stats.byVerdict.high"
             size="x-small"
             variant="text"
-            class="pa-0 me-1"
-          >{{ hostLabel(host) }} {{ count }}</v-chip>
-          <v-chip size="x-small" variant="text" class="pa-0 me-1">
-            📷 拍照 {{ stats.bySource.photo }}
-          </v-chip>
+            :icon="detailOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            @click="detailOpen = !detailOpen"
+          />
         </div>
+        <v-expand-transition>
+          <div v-if="detailOpen" class="mt-2 text-caption">
+            <div class="mb-1">
+              <span class="text-medium-emphasis me-2">掛牌偏高</span>{{ stats.byVerdict.high }}
+              <span class="text-medium-emphasis mx-2">·</span>
+              <span class="text-medium-emphasis me-2">收藏</span>{{ stats.collected }}
+            </div>
+            <div v-if="Object.keys(stats.byHost).length">
+              <span class="text-medium-emphasis">來源：</span>
+              <v-chip
+                v-for="(count, host) in stats.byHost"
+                :key="host"
+                size="x-small"
+                variant="text"
+                class="pa-0 me-1"
+              >{{ hostLabel(host) }} {{ count }}</v-chip>
+              <v-chip size="x-small" variant="text" class="pa-0">📷 拍照 {{ stats.bySource.photo }}</v-chip>
+            </div>
+          </div>
+        </v-expand-transition>
       </v-card-text>
     </v-card>
 
@@ -156,6 +162,7 @@ const priceBucket = ref('all');
 const logs = ref([]);
 const stats = ref(null);
 const loading = ref(false);
+const detailOpen = ref(false);
 
 // History 用估價中位數比較 price bucket（因為 log 有 min~max 區間）
 const filteredLogs = computed(() => {
