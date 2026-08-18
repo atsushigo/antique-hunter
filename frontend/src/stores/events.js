@@ -3,19 +3,27 @@ import { api } from '../api.js';
 
 export const useEventsStore = defineStore('events', {
   state: () => ({
-    list: [],
+    list: [], // market events
+    auctions: [], // KSI auction milestones
     loading: false,
     error: null,
     loadedAt: null,
     range: null,
   }),
   getters: {
-    // 依日期分組：{ 'YYYY-MM-DD': [event, event, ...] }
+    // 依日期分組：{ 'YYYY-MM-DD': [event, ...] }
+    // 每 event 都有 kind = 'market' | 'auction'
     grouped(state) {
       const map = {};
       for (const e of state.list) {
-        if (!map[e.date]) map[e.date] = [];
-        map[e.date].push(e);
+        const d = e.date;
+        if (!map[d]) map[d] = [];
+        map[d].push({ ...e, kind: 'market' });
+      }
+      for (const a of state.auctions) {
+        const d = a.date.slice(0, 10);
+        if (!map[d]) map[d] = [];
+        map[d].push({ ...a, kind: 'auction' });
       }
       return map;
     },
@@ -39,9 +47,13 @@ export const useEventsStore = defineStore('events', {
         const params = {};
         if (from) params.from = from;
         if (to) params.to = to;
-        const { data } = await api.get('/events', { params });
-        this.list = data.data;
-        this.range = data.range;
+        const [marketRes, auctionRes] = await Promise.all([
+          api.get('/events', { params }),
+          api.get('/auction-schedule', { params }).catch(() => ({ data: { data: [] } })),
+        ]);
+        this.list = marketRes.data.data;
+        this.auctions = auctionRes.data.data;
+        this.range = marketRes.data.range;
         this.loadedAt = Date.now();
         return this.list;
       } catch (err) {

@@ -54,15 +54,12 @@
           </div>
           <div class="chips">
             <div
-              v-for="ev in cell.events.slice(0, 3)"
-              :key="ev.id"
+              v-for="(ev, i) in cell.events.slice(0, 3)"
+              :key="i"
               class="chip"
-              :style="{
-                '--chip-color': areaColor(ev.market.location),
-                '--chip-bg': areaColorSoft(ev.market.location),
-              }"
-              :title="ev.market.name"
-            >{{ shortName(ev.market.name) }}</div>
+              :style="chipStyle(ev)"
+              :title="chipTitle(ev)"
+            >{{ chipText(ev) }}</div>
             <div v-if="cell.events.length > 3" class="more">+{{ cell.events.length - 3 }}</div>
           </div>
         </div>
@@ -73,6 +70,10 @@
         <span v-for="(c, area) in AREA_COLORS" :key="area" class="d-flex align-center">
           <span class="legend-dot" :style="{ background: c }" />
           <span class="text-caption">{{ area }}</span>
+        </span>
+        <span class="d-flex align-center">
+          <span class="legend-dot" :style="{ background: AUCTION_COLOR }" />
+          <span class="text-caption">官公庁拍賣</span>
         </span>
       </div>
 
@@ -94,34 +95,51 @@
           </div>
         </div>
         <v-divider />
-        <div
-          v-for="ev in selectedEvents"
-          :key="ev.id"
-          class="pa-3 event-row"
-          :style="{ '--row-color': areaColor(ev.market.location) }"
-        >
-          <div class="d-flex align-center">
-            <div class="text-subtitle-2 font-weight-medium">{{ ev.market.name }}</div>
-            <v-spacer />
-            <div v-if="ev.market.timeRange" class="text-caption text-medium-emphasis">
-              {{ ev.market.timeRange }}
+        <!-- market event -->
+        <template v-for="(ev, i) in selectedEvents" :key="i">
+          <div
+            v-if="ev.kind === 'market'"
+            class="pa-3 event-row"
+            :style="{ '--row-color': areaColor(ev.market.location) }"
+          >
+            <div class="d-flex align-center">
+              <div class="text-subtitle-2 font-weight-medium">{{ ev.market.name }}</div>
+              <v-spacer />
+              <div v-if="ev.market.timeRange" class="text-caption text-medium-emphasis">
+                {{ ev.market.timeRange }}
+              </div>
             </div>
+            <div class="text-caption text-medium-emphasis mt-1">
+              <v-icon size="14" class="me-1">mdi-map-marker</v-icon>{{ ev.market.location }}
+              <span v-if="ev.market.driveTimeMin != null" class="ms-2">
+                <v-icon size="14" class="me-1">mdi-car</v-icon>{{ ev.market.driveTimeMin }} 分
+                <span v-if="ev.market.tollYen != null">· ¥{{ ev.market.tollYen.toLocaleString() }}</span>
+              </span>
+            </div>
+            <div v-if="ev.market.scale" class="text-caption text-medium-emphasis mt-1">
+              <v-icon size="14" class="me-1">mdi-storefront</v-icon>{{ ev.market.scale }}
+            </div>
+            <div v-if="ev.market.theme" class="text-caption mt-1">{{ ev.market.theme }}</div>
           </div>
-          <div class="text-caption text-medium-emphasis mt-1">
-            <v-icon size="14" class="me-1">mdi-map-marker</v-icon>{{ ev.market.location }}
-            <span v-if="ev.market.driveTimeMin != null" class="ms-2">
-              <v-icon size="14" class="me-1">mdi-car</v-icon>{{ ev.market.driveTimeMin }} 分
-              <span v-if="ev.market.tollYen != null">· ¥{{ ev.market.tollYen.toLocaleString() }}</span>
-            </span>
-          </div>
-          <div v-if="ev.market.scale" class="text-caption text-medium-emphasis mt-1">
-            <v-icon size="14" class="me-1">mdi-storefront</v-icon>{{ ev.market.scale }}
-          </div>
-          <div v-if="ev.market.theme" class="text-caption mt-1">{{ ev.market.theme }}</div>
-          <div v-if="ev.market.notes" class="text-caption text-medium-emphasis mt-1">
-            <v-icon size="14" class="me-1">mdi-lightbulb-outline</v-icon>{{ ev.market.notes }}
-          </div>
-        </div>
+          <!-- auction event -->
+          <a
+            v-else-if="ev.kind === 'auction'"
+            :href="ev.url"
+            target="_blank"
+            class="pa-3 event-row auction-row"
+            :style="{ '--row-color': AUCTION_COLOR }"
+          >
+            <div class="d-flex align-center">
+              <v-icon size="16" color="secondary" class="me-1">mdi-gavel</v-icon>
+              <div class="text-subtitle-2 font-weight-medium">{{ ev.typeLabel }}（{{ ev.categoryLabel }}）</div>
+              <v-spacer />
+              <div class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</div>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-1">
+              🏛 {{ ev.government }} · KSI 官公庁
+            </div>
+          </a>
+        </template>
       </v-card>
       <div v-else-if="!store.loading" class="text-caption text-medium-emphasis text-center pa-6">
         {{ selectedISO }} 沒有活動
@@ -141,24 +159,43 @@
             <div class="text-caption text-medium-emphasis">{{ relativeLabel(date) }}</div>
           </div>
         </div>
-        <v-card
-          v-for="ev in store.grouped[date]"
-          :key="ev.id"
-          variant="outlined"
-          class="mb-2 agenda-card"
-          :style="{ borderLeftColor: areaColor(ev.market.location) }"
-        >
-          <v-card-text class="pa-3">
-            <div class="text-subtitle-2 font-weight-medium">{{ ev.market.name }}</div>
-            <div class="text-caption text-medium-emphasis mt-1">
-              <v-icon size="14" class="me-1">mdi-map-marker</v-icon>{{ ev.market.location }}
-              <span v-if="ev.market.timeRange" class="ms-2">
-                <v-icon size="14" class="me-1">mdi-clock-outline</v-icon>{{ ev.market.timeRange }}
-              </span>
-            </div>
-            <div v-if="ev.market.theme" class="text-caption mt-1">{{ ev.market.theme }}</div>
-          </v-card-text>
-        </v-card>
+        <template v-for="(ev, i) in store.grouped[date]" :key="i">
+          <v-card
+            v-if="ev.kind === 'market'"
+            variant="outlined"
+            class="mb-2 agenda-card"
+            :style="{ borderLeftColor: areaColor(ev.market.location) }"
+          >
+            <v-card-text class="pa-3">
+              <div class="text-subtitle-2 font-weight-medium">{{ ev.market.name }}</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                <v-icon size="14" class="me-1">mdi-map-marker</v-icon>{{ ev.market.location }}
+                <span v-if="ev.market.timeRange" class="ms-2">
+                  <v-icon size="14" class="me-1">mdi-clock-outline</v-icon>{{ ev.market.timeRange }}
+                </span>
+              </div>
+              <div v-if="ev.market.theme" class="text-caption mt-1">{{ ev.market.theme }}</div>
+            </v-card-text>
+          </v-card>
+          <v-card
+            v-else-if="ev.kind === 'auction'"
+            variant="outlined"
+            class="mb-2 agenda-card auction-agenda"
+            :style="{ borderLeftColor: AUCTION_COLOR }"
+            :href="ev.url"
+            target="_blank"
+          >
+            <v-card-text class="pa-3">
+              <div class="d-flex align-center">
+                <v-icon size="16" color="secondary" class="me-1">mdi-gavel</v-icon>
+                <div class="text-subtitle-2 font-weight-medium">{{ ev.typeLabel }} · {{ ev.categoryLabel }}</div>
+                <v-spacer />
+                <span class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</span>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.government }} · KSI 官公庁</div>
+            </v-card-text>
+          </v-card>
+        </template>
       </div>
     </template>
   </v-container>
@@ -246,6 +283,10 @@ const AREA_COLORS_SOFT = {
   兵庫: 'rgba(59, 95, 122, 0.10)',
   奈良: 'rgba(90, 122, 72, 0.10)',
 };
+// KSI 官公庁拍賣：深土黃（gavel/木槌色調）
+const AUCTION_COLOR = '#8B6914';
+const AUCTION_COLOR_SOFT = 'rgba(139, 105, 20, 0.10)';
+
 function areaColor(location) {
   for (const [area, color] of Object.entries(AREA_COLORS)) {
     if (location?.startsWith(area)) return color;
@@ -257,6 +298,35 @@ function areaColorSoft(location) {
     if (location?.startsWith(area)) return color;
   }
   return 'rgba(121, 85, 72, 0.10)';
+}
+
+// 月曆格 chip helpers（market + auction 兩種）
+const AUCTION_TYPE_ABBR = {
+  entry_start: '📋申',
+  entry_end: '📋締',
+  bid_start: '⚖入',
+  bid_end: '⚖終',
+};
+function chipStyle(ev) {
+  if (ev.kind === 'auction') {
+    return { '--chip-color': AUCTION_COLOR, '--chip-bg': AUCTION_COLOR_SOFT };
+  }
+  return {
+    '--chip-color': areaColor(ev.market?.location),
+    '--chip-bg': areaColorSoft(ev.market?.location),
+  };
+}
+function chipTitle(ev) {
+  if (ev.kind === 'auction') {
+    return `${ev.typeLabel}（${ev.categoryLabel}）· ${ev.government}`;
+  }
+  return `${ev.market.name} · ${ev.market.location}`;
+}
+function chipText(ev) {
+  if (ev.kind === 'auction') {
+    return AUCTION_TYPE_ABBR[ev.type] || '拍賣';
+  }
+  return shortName(ev.market.name);
 }
 
 const SHORT_NAME = {
@@ -457,9 +527,15 @@ function relativeLabel(iso) {
 .event-row {
   border-left: 3px solid var(--row-color);
   margin: 0;
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
 .event-row + .event-row {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+a.event-row:hover {
+  background: rgba(139, 105, 20, 0.05);
 }
 
 /* Agenda mode */
