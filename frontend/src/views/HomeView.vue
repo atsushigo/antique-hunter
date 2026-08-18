@@ -67,9 +67,8 @@
       </v-card>
     </div>
 
-    <!-- 次要工具列（官公庁/追蹤/帳號 都在 bottom nav 常駐，這裡只放輔助功能）-->
+    <!-- 次要工具列（首頁/追蹤/日曆/官公庁/帳號 都在 bottom nav 常駐，這裡只放輔助功能）-->
     <div class="d-flex flex-wrap ga-1 mt-4 mb-2">
-      <v-btn variant="text" size="small" prepend-icon="mdi-calendar-month" @click="$router.push('/calendar')">市集日曆</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
