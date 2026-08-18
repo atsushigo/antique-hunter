@@ -107,8 +107,48 @@
       <li>拍完在 <b>知識庫</b> 記錄（自己那筆 or 觀察別人成交）— 累積個人經驗</li>
     </ol>
 
-    <h2>官方連結</h2>
+    <h2>過往真實成交案例</h2>
+    <p class="text-caption text-medium-emphasis">
+      整理自 KSI 官方 note.com 2025 年度 ranking + 民間體驗 blog（連結見出處）
+    </p>
+
+    <h3>💴 極端低額落札（撿到寶）</h3>
+    <ul class="cases">
+      <li><b>¥30</b> — 液晶テレビ（2025 年度最低價）</li>
+      <li><b>¥50</b> — カルビープロ野球カード</li>
+      <li><b>¥100</b> — シャープ 32 吋テレビ（2023 案例）</li>
+      <li><b>¥2,000</b> — 日産クリッパー 平成 23 年式（2023 案例，車！）</li>
+      <li><b>¥11,000</b> — ダイハツ ムーヴ（2025，車輛最低）</li>
+      <li><b>¥16,500</b> — メルセデス・ベンツ（2025 車輛驚人案例）</li>
+      <li><b>¥30,000</b> — 平成 13 年式 トヨタ カローラフィールダー</li>
+      <li><b>¥40,000</b> — 電動アシスト自転車</li>
+      <li><b>¥90,000</b> — 別荘地（木曽町，不動產！）</li>
+      <li><b>¥1,990,000</b> — 徳島縣阿南市土地付き建物</li>
+    </ul>
+
+    <h3>💎 高額落札（人氣物件）</h3>
+    <ul class="cases">
+      <li><b>¥121,486,000</b> — 立川市土地（不動產榜首）</li>
+      <li><b>¥14,463,000</b> — レクサス LM500H（車輛榜首）</li>
+      <li><b>¥14,000,000</b> — スタインウェイ&サンズ グランドピアノ</li>
+      <li><b>¥3,501,000</b> — エルメス バーキン（動產榜第 3）</li>
+    </ul>
+
+    <h3>📝 民間體驗心得</h3>
+    <v-alert type="warning" variant="tonal" density="compact" class="mb-3">
+      <b>anne3150.com 作者實測體驗</b>：
+      「入札遊戲機時，1 小時內價格漲了 4 萬日圓，秒放棄」；
+      「熱門物件價格競爭激烈，加上運費最後常比 Yahoo 拍賣還貴」→
+      **結論：撿漏要挑冷門項目 + 能自取的近距離**
+    </v-alert>
+
+    <h2>📚 出處與延伸閱讀</h2>
     <ul>
+      <li><a href="https://note.com/ksijapan/n/nfcd004a555f4" target="_blank">KSI 2025 年度落札 ranking（KSI 官方 note）</a></li>
+      <li><a href="https://note.com/ksijapan/n/n45712b656e5f" target="_blank">消防車や救急車が落札できる!?（第 1 回）</a></li>
+      <li><a href="https://note.com/shirousagi_note/n/n800c3b8370ca" target="_blank">日記：官公庁オークション、趣深い（民間體驗）</a></li>
+      <li><a href="https://anne3150.com/?p=2787" target="_blank">実践編！KSI 官公庁オークションに参加してみた（民間 blog）</a></li>
+      <li><a href="https://www.all-senmonka.jp/moneyizm/money/77874/" target="_blank">MONEYIZM 官公庁オークション 掘り出し物一覧</a></li>
       <li><a href="https://www.pages.kankocho.jp/guide" target="_blank">KSI 初めての方へ（官方入門）</a></li>
       <li><a href="https://help.kankocho.jp/" target="_blank">KSI ヘルプ FAQ</a></li>
       <li><a href="https://www.koubai.nta.go.jp/" target="_blank">国税庁公売情報</a></li>
@@ -132,4 +172,13 @@
   margin: 8px 0;
   border-left: 3px solid #795548;
 }
+.cases li {
+  margin: 4px 0;
+  padding: 4px 8px;
+  background: rgba(121, 85, 72, 0.03);
+  border-radius: 4px;
+  list-style: none;
+}
+.cases li b { color: #795548; font-size: 15px; }
+.cases { padding-left: 0; }
 </style>

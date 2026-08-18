@@ -1,18 +1,21 @@
 <template>
   <v-bottom-navigation :model-value="active" grow color="primary" bg-color="surface">
     <v-btn value="home" @click="go('home')">
-      <v-icon>mdi-camera</v-icon>
-      <span>拍照</span>
+      <v-icon>mdi-home</v-icon>
+      <span>首頁</span>
     </v-btn>
-    <v-btn value="calendar" @click="go('calendar')">
-      <v-icon>mdi-calendar-month</v-icon>
-      <span>日曆</span>
+    <v-btn value="inbox" @click="go('inbox')">
+      <v-icon>mdi-bell-ring</v-icon>
+      <span>追蹤</span>
     </v-btn>
-    <v-btn value="markets" @click="go('markets')">
-      <v-icon>mdi-storefront</v-icon>
-      <span>市集</span>
+    <v-btn value="gov-auctions" @click="go('gov-auctions')">
+      <v-icon>mdi-gavel</v-icon>
+      <span>官公庁</span>
     </v-btn>
-    <v-btn value="camera" @click="go('camera')" style="display:none" />
+    <v-btn value="accounts" @click="go('accounts')">
+      <v-icon>mdi-account-key</v-icon>
+      <span>帳號</span>
+    </v-btn>
   </v-bottom-navigation>
 </template>
 
@@ -24,9 +27,8 @@ const route = useRoute();
 const router = useRouter();
 
 const active = computed(() => {
-  if (route.name === 'markets') return 'markets';
-  if (route.name === 'calendar') return 'calendar';
-  return 'home';
+  const map = { inbox: 'inbox', 'gov-auctions': 'gov-auctions', accounts: 'accounts' };
+  return map[route.name] || 'home';
 });
 
 function go(name) {
