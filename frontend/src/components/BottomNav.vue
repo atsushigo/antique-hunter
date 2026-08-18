@@ -8,6 +8,10 @@
       <v-icon>mdi-bell-ring</v-icon>
       <span>追蹤</span>
     </v-btn>
+    <v-btn value="calendar" @click="go('calendar')">
+      <v-icon>mdi-calendar-month</v-icon>
+      <span>日曆</span>
+    </v-btn>
     <v-btn value="gov-auctions" @click="go('gov-auctions')">
       <v-icon>mdi-gavel</v-icon>
       <span>官公庁</span>
@@ -27,7 +31,13 @@ const route = useRoute();
 const router = useRouter();
 
 const active = computed(() => {
-  const map = { inbox: 'inbox', 'gov-auctions': 'gov-auctions', accounts: 'accounts' };
+  const map = {
+    inbox: 'inbox',
+    calendar: 'calendar',
+    'gov-auctions': 'gov-auctions',
+    'gov-auctions-guide': 'gov-auctions',
+    accounts: 'accounts',
+  };
   return map[route.name] || 'home';
 });
 
