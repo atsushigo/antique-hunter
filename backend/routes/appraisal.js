@@ -54,7 +54,15 @@ appraisalRouter.post('/', upload.single('image'), async (req, res, next) => {
     }
 
     const img = await processUpload(req.file.buffer);
-    const result = await appraise({ base64: img.base64, mediaType: img.mediaType, mode: 'image' });
+    const userDescription = typeof req.body?.description === 'string'
+      ? req.body.description.trim().slice(0, 500)
+      : '';
+    const result = await appraise({
+      base64: img.base64,
+      mediaType: img.mediaType,
+      mode: 'image',
+      context: userDescription ? { userDescription } : null,
+    });
 
     const log = await AppraisalLog.create({
       imageHash: img.hash,

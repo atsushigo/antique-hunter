@@ -91,6 +91,17 @@ authenticity_checks 3-6 項，verdict 誠實回 cannot_tell 若照片辨識不�
 
 const USER_PROMPT_IMAGE = '請鑑定這件物品，回 JSON。';
 
+function buildImageUserPrompt(context) {
+  const desc = context?.userDescription;
+  if (!desc) return USER_PROMPT_IMAGE;
+  return [
+    '請鑑定這件物品，回 JSON。',
+    '',
+    '使用者補充（含來源、狀況、賣家開價等資訊，作為判斷依據，但仍以照片為主）：',
+    desc.slice(0, 500),
+  ].join('\n');
+}
+
 let client = null;
 function getClient() {
   if (!client && config.claude.enabled) {
@@ -116,7 +127,7 @@ export async function appraise({ base64, mediaType, mode = 'image', context = nu
   const c = getClient();
   const isUrl = mode === 'url';
   const system = isUrl ? SYSTEM_PROMPT_URL : SYSTEM_PROMPT_IMAGE;
-  const userText = isUrl ? buildUrlUserPrompt(context) : USER_PROMPT_IMAGE;
+  const userText = isUrl ? buildUrlUserPrompt(context) : buildImageUserPrompt(context);
 
   const response = await c.messages.create({
     model: config.claude.model,

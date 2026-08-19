@@ -36,21 +36,24 @@ export const useAppraisalsStore = defineStore('appraisals', {
       return db.get('appraisals', Number(localId));
     },
 
-    async submit(fileOrBlob) {
+    async submit(fileOrBlob, opts = {}) {
       this.uploading = true;
       this.lastError = null;
 
       const dataUrl = await blobToDataUrl(fileOrBlob);
+      const description = (opts.description || '').trim();
       const localId = await enqueueAppraisal({
         thumbDataUrl: dataUrl,
         filename: fileOrBlob.name || 'capture.jpg',
         sizeBytes: fileOrBlob.size,
+        userDescription: description || null,
         result: null,
       });
 
       try {
         const form = new FormData();
         form.append('image', fileOrBlob, fileOrBlob.name || 'capture.jpg');
+        if (description) form.append('description', description);
         const { data } = await api.post('/appraisal', form);
         await updateAppraisal(localId, { status: 'done', result: data.data });
         await this.loadLocal();

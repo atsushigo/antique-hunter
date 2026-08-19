@@ -23,6 +23,14 @@
         </v-btn>
       </div>
 
+      <v-alert
+        v-if="entry.userDescription"
+        type="info" variant="tonal" density="compact" class="mb-3 user-desc"
+      >
+        <div class="text-caption font-weight-medium mb-1">📝 你的補充描述</div>
+        <div class="text-caption" style="white-space:pre-wrap">{{ entry.userDescription }}</div>
+      </v-alert>
+
       <v-alert v-if="entry.status === 'pending'" type="info" density="compact" class="mb-3">
         送出中，請稍候
       </v-alert>
