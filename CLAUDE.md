@@ -43,7 +43,9 @@ Sam 個人用的日本二手/古董撿漏 PWA — Vue 3 + Node.js + Express + SQ
 - 個人 repo，直接 push main 沒 PR
 - 除非明確要求，別加 `Co-Authored-By: Claude`
 
-**Testing：**
+**Testing（前置：dev server 兩個都要跑）：**
+- Backend `:3000` — `cd backend && npm start`（smoke test 需要）
+- Frontend `:5173` — `cd frontend && npm run dev`（browser check 需要）
 - 每輪改動跑 `bash backend/scripts/smoke-test.sh`（35 項）
 - Frontend 改跑 `node backend/scripts/browser-check.js`（27 項）
 - **UI 改自己截圖驗證** 別讓 Sam 開瀏覽器才發現壞
@@ -98,4 +100,7 @@ Sam 個人用的日本二手/古董撿漏 PWA — Vue 3 + Node.js + Express + SQ
 
 ---
 
-**深入細節看 `docs/HANDOFF.md`。**
+**深入細節看 `docs/HANDOFF.md`（含 Patterns · 如何加新東西 section）。**
+
+**Repo：** `atsushigo/antique-hunter`（migrate 自舊的 `[redacted]`，
+舊 repo 未動仍存在做備援）。Local git remote 用 SSH alias `git@github-atsushigo:...`。

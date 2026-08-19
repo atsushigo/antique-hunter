@@ -1,7 +1,7 @@
 # antique-hunter · 交接文件（HANDOFF）
 
 **目的：** 一個沒看過這 repo 的人（人類 or AI session）看完這份能接手繼續開發。
-**Last updated：** 2026-08-20
+**Last updated：** 2026-08-20（含 patterns section + repo migrate 到 atsushigo）
 
 ---
 
@@ -230,6 +230,10 @@ node backend/scripts/browser-check.js       # 27/27 Playwright DOM check
 
 ## 8 · Testing 慣例
 
+**前置：** 這兩個 test 都需要 dev server 跑著：
+- `backend/scripts/smoke-test.sh` → 需要 backend `:3000`（跑 `cd backend && npm start`）
+- `backend/scripts/browser-check.js` → 需要 backend `:3000` + frontend `:5173`（多開一個 terminal 跑 `cd frontend && npm run dev`）
+
 **每輪改動要跑：**
 
 ```bash
@@ -309,6 +313,8 @@ node /tmp/audit.mjs
 - ✅ Phase 7：UI 精簡（5 view）+ 新手 UX（tagline / CTA / tooltip）
 - ✅ Phase 8：Camera 多張照片（1-5）+ 補充描述
 - ✅ Phase 9：交接文件（這份 + CLAUDE.md + STATUS 刷新）
+- ✅ Phase 10：Repo migrate 到 `atsushigo/antique-hunter`（2026-08-20，
+  舊 repo `[redacted]/antique-hunter` 仍存在未動）
 
 **下一步（by ROI，見 `/pipeline` view 或 `docs/APPRAISAL_PIPELINE.md`）：**
 1. **部 backend 到 Hetzner CX33** ← 最大 QoL 提升，沒這步出門用不到
@@ -340,6 +346,124 @@ node /tmp/audit.mjs
 - `~/.claude/projects/-Users-user-Personal-antique-hunter/memory/MEMORY.md` — 索引
 - 相關檔案：user preferences、feedback records、project state
 - 讀 memory 系統要先 read `MEMORY.md`
+
+（memory 是 Claude Code 的功能，只在同一台 Mac 有；換裝置就靠這份 HANDOFF 接手）
+
+---
+
+## 14 · Patterns · 如何加新東西
+
+**先看已有的**，比 scratch 寫快。所有 pattern 都能複製既有檔案改。
+
+### 14.1 加新 API endpoint
+
+複製最單純的 `backend/routes/auction-sources.js` 當範本：
+
+```js
+// backend/routes/foo.js
+import { Router } from 'express';
+export const fooRouter = Router();
+
+fooRouter.get('/', async (req, res, next) => {
+  try {
+    res.json({ data: [...], count: 0 });
+  } catch (err) { next(err); }
+});
+```
+
+在 `backend/server.js` 註冊：
+```js
+import { fooRouter } from './routes/foo.js';
+app.use('/api/foo', fooRouter);
+```
+
+**若要接 DB：** 看 `backend/routes/knowledge.js`（用 Sequelize models）
+**若要爬外站：** 看 `backend/routes/gov-auctions.js`（fetch + Next.js RSC 解析）
+**若要 Playwright：** 看 `backend/search-scrape.js`（用 `browser.js` singleton）
+
+**加 smoke test：** 在 `backend/scripts/smoke-test.sh` 加一行 `check_json` 呼叫。
+
+### 14.2 加新 view
+
+複製 `frontend/src/views/CollectionView.vue`（結構最簡）：
+
+```vue
+<template>
+  <v-container class="px-3 pb-16">
+    <!-- app-bar 已顯示 route.meta.title，不要重複寫 -->
+    <div v-if="loading" class="text-center pa-8">
+      <v-progress-circular indeterminate color="primary" />
+    </div>
+    <div v-else-if="!list.length" class="text-center pa-8">
+      <!-- 空狀態要有 icon + 說明 + CTA -->
+      <v-icon size="48" color="grey">mdi-inbox-outline</v-icon>
+      <div class="text-body-2 mt-2">還沒有資料</div>
+      <v-btn class="mt-3" color="primary" variant="tonal">去做點什麼</v-btn>
+    </div>
+    <!-- list rendering here -->
+  </v-container>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { api } from '../api.js';
+
+const list = ref([]);
+const loading = ref(false);
+
+onMounted(async () => {
+  loading.value = true;
+  try {
+    const { data } = await api.get('/foo');
+    list.value = data.data;
+  } finally { loading.value = false; }
+});
+</script>
+```
+
+在 `frontend/src/router.js` 註冊：
+```js
+{
+  path: '/foo',
+  name: 'foo',
+  component: () => import('./views/FooView.vue'),
+  meta: { title: 'Foo 標題' }, // ← app-bar 用這個
+}
+```
+
+**若要進 BottomNav：** 改 `frontend/src/components/BottomNav.vue`（5 tab 已滿，要換掉一個）
+**若只要輔助入口：** `HomeView.vue` 次要工具列加一個 `v-btn`
+
+**加 browser-check test：** 在 `backend/scripts/browser-check.js` 加 `await check(page, '/foo', {...})`
+
+### 14.3 加靜態 seed 資料
+
+如市集 / 拍賣管道這種手動維護的 metadata：
+- **hardcode JS：** `backend/data/auction-sources.js` 那樣 export const 陣列
+- **走 seeder：** `backend/seeders/*.cjs`（Market/MarketEvent 用這個，能改 DB）
+- **註冊到 API：** 在 route file 內 import 資料
+
+`backend/data/` 是 gitignore 過的（DB / cache / sessions 不進 git），但 `.js` code files 有例外 include，會進 git。
+
+### 14.4 加 cron job
+
+看 `backend/cron.js`。目前只有一個「每天 08:00 跑追蹤關鍵字」。加新 job 就 `cron.schedule('0 8 * * *', async () => {...})`。
+
+**注意：** cron 只在 `npm start`（`server.js` 啟動時）跑。單跑 script 不會觸發。
+
+### 14.5 常見改動的檔案速查
+
+| 想做的事 | 改哪 |
+|---|---|
+| 加 API route | `backend/routes/`, `backend/server.js` |
+| 加 DB 欄位 | `backend/models/`, `backend/migrations/` + `npm run db:migrate` |
+| 加 view | `frontend/src/views/`, `frontend/src/router.js` |
+| 加 BottomNav tab | `frontend/src/components/BottomNav.vue` |
+| 加共用 API 呼叫 | `frontend/src/stores/`（Pinia store） |
+| 加共用 util | `frontend/src/labels.js` 或 `composables/` |
+| 加 seed 資料 | `backend/seeders/` 或 `backend/data/` |
+| 改 theme 色 | `frontend/src/vuetify.js` |
+| 改 app-bar / 底 nav | `frontend/src/App.vue`, `BottomNav.vue` |
 
 ---
 

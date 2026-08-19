@@ -20,6 +20,7 @@ Phase 6 · Calendar 整合 KSI milestone              ✅
 Phase 7 · UI 精簡 + 新手 UX                         ✅
 Phase 8 · Camera 多張照片 + 補充描述                ✅
 Phase 9 · 交接文件（CLAUDE.md + HANDOFF.md）        ✅ 2026-08-20
+Phase 10 · Repo migrate → atsushigo/antique-hunter   ✅ 2026-08-20
 ```
 
 **下一步（by ROI）：** 見 `docs/APPRAISAL_PIPELINE.md` 或 app 內 `/pipeline` view
