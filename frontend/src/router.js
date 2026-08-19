@@ -98,6 +98,12 @@ const routes = [
     meta: { title: '鑑定結果' },
     props: true,
   },
+  {
+    path: '/pipeline',
+    name: 'pipeline',
+    component: () => import('./views/PipelineDocView.vue'),
+    meta: { title: '鑑定流程設計 · dev doc' },
+  },
 ];
 
 export const router = createRouter({

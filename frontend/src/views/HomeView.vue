@@ -77,6 +77,7 @@
       <v-btn variant="text" size="small" prepend-icon="mdi-text-search" @click="$router.push('/search')">即時搜尋</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-star" @click="$router.push('/collection')">收藏</v-btn>
       <v-btn variant="text" size="small" prepend-icon="mdi-history" @click="$router.push('/history')">歷史</v-btn>
+      <v-btn variant="text" size="small" prepend-icon="mdi-sitemap" @click="$router.push('/pipeline')">設計文件</v-btn>
     </div>
 
     <!-- 最近鑑定 -->
