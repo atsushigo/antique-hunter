@@ -91,15 +91,20 @@ authenticity_checks 3-6 項，verdict 誠實回 cannot_tell 若照片辨識不�
 
 const USER_PROMPT_IMAGE = '請鑑定這件物品，回 JSON。';
 
-function buildImageUserPrompt(context) {
+function buildImageUserPrompt(context, imageCount = 1) {
   const desc = context?.userDescription;
-  if (!desc) return USER_PROMPT_IMAGE;
-  return [
-    '請鑑定這件物品，回 JSON。',
-    '',
-    '使用者補充（含來源、狀況、賣家開價等資訊，作為判斷依據，但仍以照片為主）：',
-    desc.slice(0, 500),
-  ].join('\n');
+  const lines = [];
+  if (imageCount > 1) {
+    lines.push(`使用者從不同角度拍了 ${imageCount} 張同一物件的照片（如：正面／底款／內襯／瑕疵）。請綜合所有照片判斷（例如：從底款推年代、從側面看瑕疵、從正面看整體）。回 JSON。`);
+  } else {
+    lines.push('請鑑定這件物品，回 JSON。');
+  }
+  if (desc) {
+    lines.push('');
+    lines.push('使用者補充（含來源、狀況、賣家開價等資訊，作為判斷依據，但仍以照片為主）：');
+    lines.push(desc.slice(0, 500));
+  }
+  return lines.join('\n');
 }
 
 let client = null;
@@ -110,8 +115,14 @@ function getClient() {
   return client;
 }
 
-export async function appraise({ base64, mediaType, mode = 'image', context = null }) {
+export async function appraise({ base64, mediaType, images, mode = 'image', context = null }) {
   const started = Date.now();
+
+  // 相容單張（base64 + mediaType）與多張（images）呼叫方式
+  const imgs = Array.isArray(images) && images.length
+    ? images
+    : (base64 ? [{ base64, mediaType }] : []);
+  if (!imgs.length) throw new Error('appraise: no image provided');
 
   if (!config.claude.enabled) {
     const m = mockAppraisal(mode, context);
@@ -127,21 +138,19 @@ export async function appraise({ base64, mediaType, mode = 'image', context = nu
   const c = getClient();
   const isUrl = mode === 'url';
   const system = isUrl ? SYSTEM_PROMPT_URL : SYSTEM_PROMPT_IMAGE;
-  const userText = isUrl ? buildUrlUserPrompt(context) : buildImageUserPrompt(context);
+  const userText = isUrl ? buildUrlUserPrompt(context) : buildImageUserPrompt(context, imgs.length);
+
+  const content = imgs.map((im) => ({
+    type: 'image',
+    source: { type: 'base64', media_type: im.mediaType, data: im.base64 },
+  }));
+  content.push({ type: 'text', text: userText });
 
   const response = await c.messages.create({
     model: config.claude.model,
     max_tokens: 1500,
     system,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-          { type: 'text', text: userText },
-        ],
-      },
-    ],
+    messages: [{ role: 'user', content }],
   });
 
   const text = response.content

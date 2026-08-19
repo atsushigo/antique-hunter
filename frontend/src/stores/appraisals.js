@@ -36,23 +36,27 @@ export const useAppraisalsStore = defineStore('appraisals', {
       return db.get('appraisals', Number(localId));
     },
 
-    async submit(fileOrBlob, opts = {}) {
+    async submit(fileOrFiles, opts = {}) {
       this.uploading = true;
       this.lastError = null;
 
-      const dataUrl = await blobToDataUrl(fileOrBlob);
+      const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+      if (!files.length) throw new Error('no image');
+      const primary = files[0];
+      const dataUrl = await blobToDataUrl(primary);
       const description = (opts.description || '').trim();
       const localId = await enqueueAppraisal({
         thumbDataUrl: dataUrl,
-        filename: fileOrBlob.name || 'capture.jpg',
-        sizeBytes: fileOrBlob.size,
+        filename: primary.name || 'capture.jpg',
+        sizeBytes: primary.size,
         userDescription: description || null,
+        imageCount: files.length,
         result: null,
       });
 
       try {
         const form = new FormData();
-        form.append('image', fileOrBlob, fileOrBlob.name || 'capture.jpg');
+        for (const f of files) form.append('images', f, f.name || 'capture.jpg');
         if (description) form.append('description', description);
         const { data } = await api.post('/appraisal', form);
         await updateAppraisal(localId, { status: 'done', result: data.data });
@@ -117,7 +121,8 @@ export const useAppraisalsStore = defineStore('appraisals', {
         try {
           const form = new FormData();
           const blob = await (await fetch(p.thumbDataUrl)).blob();
-          form.append('image', blob, p.filename || 'capture.jpg');
+          form.append('images', blob, p.filename || 'capture.jpg');
+          if (p.userDescription) form.append('description', p.userDescription);
           const { data } = await api.post('/appraisal', form);
           await updateAppraisal(p.localId, { status: 'done', result: data.data });
           results.push({ localId: p.localId, ok: true });

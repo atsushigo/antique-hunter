@@ -46,29 +46,32 @@ function toApi(log, result) {
   };
 }
 
-// 拍照鑑定
-appraisalRouter.post('/', upload.single('image'), async (req, res, next) => {
+// 拍照鑑定（支援 1-5 張，同一物件多角度）
+appraisalRouter.post('/', upload.array('images', 5), async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'missing_image', message: '請以 multipart/form-data field="image" 上傳圖片' });
+    // 相容舊版單張 field="image"：把 upload.single 塞的 req.file 併入 req.files
+    const raws = (req.files && req.files.length ? req.files : (req.file ? [req.file] : []));
+    if (!raws.length) {
+      return res.status(400).json({ error: 'missing_image', message: '請以 multipart/form-data field="images" 上傳 1-5 張圖片' });
     }
 
-    const img = await processUpload(req.file.buffer);
+    const processed = await Promise.all(raws.map((f) => processUpload(f.buffer)));
     const userDescription = typeof req.body?.description === 'string'
       ? req.body.description.trim().slice(0, 500)
       : '';
     const result = await appraise({
-      base64: img.base64,
-      mediaType: img.mediaType,
+      images: processed.map((p) => ({ base64: p.base64, mediaType: p.mediaType })),
       mode: 'image',
       context: userDescription ? { userDescription } : null,
     });
 
+    // primary image = 第一張，其他張只存 hash 到 rawResponse 內
+    const primary = processed[0];
     const log = await AppraisalLog.create({
-      imageHash: img.hash,
-      imageBytes: img.bytes,
-      imageWidth: img.width,
-      imageHeight: img.height,
+      imageHash: primary.hash,
+      imageBytes: primary.bytes,
+      imageWidth: primary.width,
+      imageHeight: primary.height,
       category: result.category,
       era: result.era,
       priceMinJpy: result.price_min_jpy,
@@ -83,7 +86,7 @@ appraisalRouter.post('/', upload.single('image'), async (req, res, next) => {
       mock: result.mock,
     });
 
-    res.json({ data: toApi(log, result) });
+    res.json({ data: { ...toApi(log, result), imageCount: processed.length } });
   } catch (err) {
     next(err);
   }
