@@ -193,7 +193,7 @@ antique-hunter/
 
 ```bash
 # 一次性
-git clone https://github.com/[redacted]/antique-hunter
+git clone https://github.com/atsushigo/antique-hunter
 cd antique-hunter
 cp .env.example backend/.env     # 填 ANTHROPIC_API_KEY（沒填會走 mock 模式）
 cd backend && npm install && npm run db:migrate && npm run db:seed
@@ -322,7 +322,7 @@ node /tmp/audit.mjs
 
 **必要：**
 - **Anthropic API key** — 沒 key 走 mock 模式 OK
-- **GitHub** repo：https://github.com/[redacted]/antique-hunter（PRIVATE）
+- **GitHub** repo：https://github.com/atsushigo/antique-hunter（PRIVATE）
 
 **選用：**
 - **Yahoo JAPAN ID** — 用於 Yahoo Auction 收藏 + KSI 拍賣參加
