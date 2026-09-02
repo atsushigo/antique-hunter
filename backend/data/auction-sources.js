@@ -18,14 +18,14 @@ export const AUCTION_SOURCES = [
       payment: 'クレジット決済（信用卡） / 銀行轉帳',
     },
     identity: {
-      idRequired: '本人確認（姓名+地址+電話）',
-      accountRequired: 'Yahoo! JAPAN ID + 日本銀行帳戶',
+      idRequired: '會員登錄（email + 密碼即可，不需 Yahoo! JAPAN ID）',
+      accountRequired: '日本銀行帳戶（繳保証金/尾款用，方式依物件標示為信用卡 or 銀行轉帳）',
       foreignerOk: true,
-      foreignerNotes: '需日本居住 + 日本銀行帳戶。不動產部分（農地/林地）需買受適格證明',
+      foreignerNotes: '18 歲以上 + 能理解日語即可參加。不動產部分（農地/林地）需買受適格證明',
     },
     frequency: '常年，多輪並行',
     coveredByApp: true,
-    notes: 'App 已整合，Calendar 顯示 4 個 milestone。兵庫県警・警視庁・国税庁の物件多在此上架',
+    notes: 'App 已整合，Calendar 顯示 4 個 milestone。兵庫県警・警視庁・国税庁の物件多在此上架。註冊流程：https://kankocho.jp/ 點「新規登録」，email 收驗證碼即可，5 步驟完成（2026-09 查證，官方 help.kankocho.jp/knowledge/help030）',
   },
   {
     id: 'osaka-police-bicycle',
