@@ -5,6 +5,8 @@
       📷 拍 → AI 估價 · 🔔 追蹤新上架 · ⚖ 官公庁拍賣（日本挖寶）
     </div>
 
+    <AuctionRoundAlert />
+
     <!-- 3 個主要功能大卡 -->
     <div class="d-flex flex-column ga-3">
       <v-card
@@ -129,6 +131,7 @@ import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppraisalsStore } from '../stores/appraisals.js';
 import { useKeywordsStore } from '../stores/keywords.js';
+import AuctionRoundAlert from '../components/AuctionRoundAlert.vue';
 
 const router = useRouter();
 const store = useAppraisalsStore();
