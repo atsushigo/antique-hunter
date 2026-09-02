@@ -22,7 +22,9 @@
     </v-alert>
 
     <!-- === 月曆格子 === -->
-    <template v-if="mode === 'month'">
+    <!-- 桌面（md+）左右分欄：左邊月曆、右邊選中日詳情（sticky，不用滑下去看）；手機維持上下堆疊 -->
+    <v-row v-if="mode === 'month'" no-gutters class="cal-split">
+    <v-col cols="12" md="8" class="pr-md-4">
       <!-- 週標 -->
       <div class="cal-grid weekday-row">
         <div
@@ -103,11 +105,13 @@
           <span class="text-caption">⚖ 官公庁入札期間</span>
         </span>
       </div>
+    </v-col>
 
-      <!-- 選中日詳情 -->
+    <!-- 選中日詳情：md+ 固定在右側（sticky），手機在下方 -->
+    <v-col cols="12" md="4" class="detail-col">
       <v-card
         v-if="selectedEvents.length"
-        class="mt-4 selected-panel"
+        class="mt-4 mt-md-0 selected-panel"
         elevation="1"
         rounded="lg"
       >
@@ -173,7 +177,8 @@
       <div v-else-if="!store.loading" class="text-caption text-medium-emphasis text-center pa-6">
         {{ selectedISO }} 沒有活動
       </div>
-    </template>
+    </v-col>
+    </v-row>
 
     <!-- === Agenda 列表 === -->
     <template v-else>
@@ -605,6 +610,17 @@ function relativeLabel(iso) {
   height: 8px;
   border-radius: 999px;
   margin-right: 5px;
+}
+
+/* 桌面（md+）左右分欄：右側詳情面板 sticky，捲動月曆時保持可見 */
+@media (min-width: 960px) {
+  .detail-col {
+    position: sticky;
+    top: 12px;
+    align-self: flex-start;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
 }
 
 /* Selected panel */
