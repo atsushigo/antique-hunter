@@ -97,11 +97,11 @@
           <span class="text-caption">{{ area }}</span>
         </span>
         <span class="d-flex align-center">
-          <span class="legend-dot" :style="{ background: AUCTION_COLOR }" />
+          <span class="legend-dot" :style="{ background: ENTRY_COLOR }" />
           <span class="text-caption">📋 官公庁申請期間</span>
         </span>
         <span class="d-flex align-center">
-          <span class="legend-dot" :style="{ background: '#6B5010' }" />
+          <span class="legend-dot" :style="{ background: BID_COLOR }" />
           <span class="text-caption">⚖ 官公庁入札期間</span>
         </span>
       </div>
@@ -158,7 +158,7 @@
             :href="ev.url"
             target="_blank"
             class="pa-3 event-row auction-row"
-            :style="{ '--row-color': AUCTION_COLOR }"
+            :style="{ '--row-color': ev.type === 'bid' ? BID_COLOR : ENTRY_COLOR }"
           >
             <div class="d-flex align-center">
               <v-icon size="16" color="secondary" class="me-1">mdi-gavel</v-icon>
@@ -166,7 +166,13 @@
             </div>
             <div class="text-caption text-medium-emphasis mt-1">
               {{ ev.isRangeStart ? '開始' : '（進行中）' }} {{ ev.startDate }} {{ ev.startTime }}
-              <template v-if="ev.isRangeEnd"> ～ 截止 {{ ev.endDate }} {{ ev.endTime }}</template>
+              <template v-if="ev.isRangeEnd && !ev.subPeriods"> ～ 截止 {{ ev.endDate }} {{ ev.endTime }}</template>
+            </div>
+            <!-- 同一輪不同結算方式（せり売/入札）截止時間不同時分行列出，避免顯示成兩張幾乎一樣的卡片 -->
+            <div v-if="ev.subPeriods" class="text-caption text-medium-emphasis mt-1 sub-periods">
+              <div v-for="sp in ev.subPeriods" :key="sp.label">
+                ・{{ sp.label }} 截止 {{ sp.endDate }} {{ sp.endTime }}
+              </div>
             </div>
             <div class="text-caption text-medium-emphasis mt-1">
               🏛 {{ ev.statusLabel }} · {{ ev.sourceLabel || 'KSI 官公庁' }}
@@ -215,7 +221,7 @@
             v-else-if="ev.kind === 'auction'"
             variant="outlined"
             class="mb-2 agenda-card auction-agenda"
-            :style="{ borderLeftColor: AUCTION_COLOR }"
+            :style="{ borderLeftColor: ev.type === 'bid' ? BID_COLOR : ENTRY_COLOR }"
             :href="ev.url"
             target="_blank"
           >
@@ -226,7 +232,10 @@
               </div>
               <div class="text-caption text-medium-emphasis mt-1">
                 {{ ev.isRangeStart ? '開始' : '進行中' }} {{ ev.startTime }}
-                <template v-if="ev.isRangeEnd">～ 截止 {{ ev.endTime }}</template>
+                <template v-if="ev.isRangeEnd && !ev.subPeriods">～ 截止 {{ ev.endTime }}</template>
+              </div>
+              <div v-if="ev.subPeriods" class="text-caption text-medium-emphasis mt-1 sub-periods">
+                <div v-for="sp in ev.subPeriods" :key="sp.label">・{{ sp.label }} 截止 {{ sp.endDate }} {{ sp.endTime }}</div>
               </div>
               <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.statusLabel }} · {{ ev.sourceLabel || 'KSI 官公庁' }}</div>
             </v-card-text>
@@ -367,8 +376,10 @@ const AREA_COLORS_SOFT = {
   兵庫: 'rgba(59, 95, 122, 0.10)',
   奈良: 'rgba(90, 122, 72, 0.10)',
 };
-// KSI 官公庁拍賣：深土黃（gavel/木槌色調）
-const AUCTION_COLOR = '#8B6914';
+// KSI 官公庁拍賣：申請期間 / 入札期間 用色差夠大的兩色，跟 4 個地區色也不撞
+const ENTRY_COLOR = '#B8860B'; // 山吹金 — 📋 参加申し込み受付期間
+const BID_COLOR = '#2F6B62'; // 深緑青 — ⚖ 入札期間
+const AUCTION_COLOR = ENTRY_COLOR; // 舊變數名沿用給預設/圖例用
 
 function areaColor(location) {
   for (const [area, color] of Object.entries(AREA_COLORS)) {
@@ -490,7 +501,7 @@ function relativeLabel(iso) {
   font-size: 9px;
   font-weight: 600;
   color: #fff;
-  background: var(--bar-color, #8B6914);
+  background: #B8860B; /* 📋 参加申し込み受付期間（ENTRY_COLOR） */
   padding: 0 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -499,7 +510,7 @@ function relativeLabel(iso) {
   margin: 0 -1px;
 }
 .range-bar.is-bid {
-  background: #6B5010;
+  background: #2F6B62; /* ⚖ 入札期間（BID_COLOR） */
 }
 .range-bar.rounded-l { border-top-left-radius: 7px; border-bottom-left-radius: 7px; margin-left: 2px; }
 .range-bar.rounded-r { border-top-right-radius: 7px; border-bottom-right-radius: 7px; margin-right: 2px; }

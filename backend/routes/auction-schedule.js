@@ -16,19 +16,48 @@ auctionScheduleRouter.get('/', async (req, res, next) => {
     const schedule = await fetchAnnualSchedule();
     const events = [];
     for (const round of schedule) {
+      // 同一輪的入札相關時段常有「せり売入札期間」跟「入札期間」兩種物件結算方式，
+      // 起始時間通常一樣、只有截止不同 —— 依開始時間分組合併，避免同一天顯示兩張幾乎一樣的卡片
+      const bidGroups = new Map(); // startJst → [period, ...]
+      const entryPeriods = [];
       for (const period of round.periods) {
-        const type = period.label.includes('申し込み') ? 'entry' : 'bid';
+        if (period.label.includes('申し込み')) { entryPeriods.push(period); continue; }
+        if (!bidGroups.has(period.startJst)) bidGroups.set(period.startJst, []);
+        bidGroups.get(period.startJst).push(period);
+      }
+      for (const period of entryPeriods) {
         events.push({
           source: 'ksi',
           sourceLabel: 'KSI 官公庁',
           roundTitle: round.title,
           statusLabel: round.statusLabel,
           periodLabel: period.label,
-          type,
+          type: 'entry',
+          subPeriods: null,
           startDate: period.startJst.slice(0, 10),
           startTime: period.startJst.slice(11, 16),
           endDate: period.endJst.slice(0, 10),
           endTime: period.endJst.slice(11, 16),
+          url: 'https://kankocho.jp/schedules/',
+        });
+      }
+      for (const [startJst, periods] of bidGroups) {
+        const latest = periods.reduce((a, b) => (a.endJst > b.endJst ? a : b));
+        events.push({
+          source: 'ksi',
+          sourceLabel: 'KSI 官公庁',
+          roundTitle: round.title,
+          statusLabel: round.statusLabel,
+          periodLabel: periods.length > 1 ? '入札期間' : periods[0].label,
+          type: 'bid',
+          // 兩種以上結算方式共用開始時間但截止不同時，把各自截止時間攤開給前端分行顯示
+          subPeriods: periods.length > 1
+            ? periods.map((p) => ({ label: p.label, endDate: p.endJst.slice(0, 10), endTime: p.endJst.slice(11, 16) }))
+            : null,
+          startDate: startJst.slice(0, 10),
+          startTime: startJst.slice(11, 16),
+          endDate: latest.endJst.slice(0, 10),
+          endTime: latest.endJst.slice(11, 16),
           url: 'https://kankocho.jp/schedules/',
         });
       }
