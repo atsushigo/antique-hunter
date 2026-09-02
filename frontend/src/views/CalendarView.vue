@@ -33,34 +33,57 @@
         >{{ w }}</div>
       </div>
 
-      <!-- 日期格 -->
-      <div class="cal-grid grid-body">
+      <!-- 日期格 —— 每週一個 grid row，市集用格內小 chip，KSI 拍賣時段用跨欄連續橫條（像 Google Calendar） -->
+      <div class="grid-body">
         <div
-          v-for="cell in cells"
-          :key="cell.iso"
-          class="day-cell"
-          :class="{
-            'other-month': !cell.inMonth,
-            today: cell.isToday,
-            selected: cell.iso === selectedISO,
-            'has-events': cell.events.length > 0,
-          }"
-          @click="selectedISO = cell.iso"
+          v-for="(week, wi) in weeks"
+          :key="wi"
+          class="week-row"
+          :style="{ '--lanes': Math.max(1, laneCountByWeek[wi]) }"
         >
-          <div class="date-row">
-            <span class="date-num" :class="{ sun: cell.dow === 0, sat: cell.dow === 6 }">
-              {{ cell.day }}
-            </span>
+          <div
+            v-for="cell in week"
+            :key="cell.iso"
+            class="day-cell"
+            :class="{
+              'other-month': !cell.inMonth,
+              today: cell.isToday,
+              selected: cell.iso === selectedISO,
+              'has-events': marketEvents(cell).length > 0,
+            }"
+            @click="selectedISO = cell.iso"
+          >
+            <div class="date-row">
+              <span class="date-num" :class="{ sun: cell.dow === 0, sat: cell.dow === 6 }">
+                {{ cell.day }}
+              </span>
+            </div>
+            <div class="chips">
+              <div
+                v-for="(ev, i) in marketEvents(cell).slice(0, 2)"
+                :key="i"
+                class="chip"
+                :style="chipStyle(ev)"
+                :title="chipTitle(ev)"
+              >{{ chipText(ev) }}</div>
+              <div v-if="marketEvents(cell).length > 2" class="more">+{{ marketEvents(cell).length - 2 }}</div>
+            </div>
           </div>
-          <div class="chips">
-            <div
-              v-for="(ev, i) in cell.events.slice(0, 3)"
-              :key="i"
-              class="chip"
-              :style="chipStyle(ev)"
-              :title="chipTitle(ev)"
-            >{{ chipText(ev) }}</div>
-            <div v-if="cell.events.length > 3" class="more">+{{ cell.events.length - 3 }}</div>
+          <!-- 拍賣時段橫條：跨欄連續顯示，同週多筆重疊會分 lane 疊層 -->
+          <div class="bars-layer">
+            <a
+              v-for="bar in auctionBarsByWeek[wi]"
+              :key="bar.key"
+              class="range-bar"
+              :class="{ 'is-bid': bar.type === 'bid', 'rounded-l': bar.roundedLeft, 'rounded-r': bar.roundedRight }"
+              :style="{ gridColumn: `${bar.colStart} / ${bar.colEnd + 1}`, gridRow: bar.lane + 1 }"
+              :href="bar.url"
+              target="_blank"
+              :title="`${bar.periodLabel}（${bar.roundTitle}）· ${bar.startDate} ${bar.startTime} ～ ${bar.endDate} ${bar.endTime}`"
+              @click.stop
+            >
+              <span v-if="bar.roundedLeft">{{ bar.type === 'bid' ? '⚖' : '📋' }} {{ bar.roundTitle }}・{{ bar.periodLabel }}</span>
+            </a>
           </div>
         </div>
       </div>
@@ -73,7 +96,11 @@
         </span>
         <span class="d-flex align-center">
           <span class="legend-dot" :style="{ background: AUCTION_COLOR }" />
-          <span class="text-caption">官公庁拍賣</span>
+          <span class="text-caption">📋 官公庁申請期間</span>
+        </span>
+        <span class="d-flex align-center">
+          <span class="legend-dot" :style="{ background: '#6B5010' }" />
+          <span class="text-caption">⚖ 官公庁入札期間</span>
         </span>
       </div>
 
@@ -131,12 +158,14 @@
           >
             <div class="d-flex align-center">
               <v-icon size="16" color="secondary" class="me-1">mdi-gavel</v-icon>
-              <div class="text-subtitle-2 font-weight-medium">{{ ev.typeLabel }}（{{ ev.categoryLabel }}）</div>
-              <v-spacer />
-              <div class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</div>
+              <div class="text-subtitle-2 font-weight-medium">{{ ev.periodLabel }}（{{ ev.roundTitle }}）</div>
             </div>
             <div class="text-caption text-medium-emphasis mt-1">
-              🏛 {{ ev.government }} · {{ ev.sourceLabel || 'KSI 官公庁' }}
+              {{ ev.isRangeStart ? '開始' : '（進行中）' }} {{ ev.startDate }} {{ ev.startTime }}
+              <template v-if="ev.isRangeEnd"> ～ 截止 {{ ev.endDate }} {{ ev.endTime }}</template>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-1">
+              🏛 {{ ev.statusLabel }} · {{ ev.sourceLabel || 'KSI 官公庁' }}
             </div>
           </a>
         </template>
@@ -188,11 +217,13 @@
             <v-card-text class="pa-3">
               <div class="d-flex align-center">
                 <v-icon size="16" color="secondary" class="me-1">mdi-gavel</v-icon>
-                <div class="text-subtitle-2 font-weight-medium">{{ ev.typeLabel }} · {{ ev.categoryLabel }}</div>
-                <v-spacer />
-                <span class="text-caption text-medium-emphasis">{{ ev.date.slice(11, 16) }}</span>
+                <div class="text-subtitle-2 font-weight-medium">{{ ev.periodLabel }} · {{ ev.roundTitle }}</div>
               </div>
-              <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.government }} · {{ ev.sourceLabel || 'KSI 官公庁' }}</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                {{ ev.isRangeStart ? '開始' : '進行中' }} {{ ev.startTime }}
+                <template v-if="ev.isRangeEnd">～ 截止 {{ ev.endTime }}</template>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.statusLabel }} · {{ ev.sourceLabel || 'KSI 官公庁' }}</div>
             </v-card-text>
           </v-card>
         </template>
@@ -270,6 +301,54 @@ const cells = computed(() => {
 
 const selectedEvents = computed(() => store.grouped[selectedISO.value] || []);
 
+// 每週一個 row（6 週 = 42 格 / 7）
+const weeks = computed(() => {
+  const arr = cells.value;
+  const rows = [];
+  for (let i = 0; i < arr.length; i += 7) rows.push(arr.slice(i, i + 7));
+  return rows;
+});
+
+function marketEvents(cell) {
+  return cell.events.filter((e) => e.kind === 'market');
+}
+
+// 把 KSI 拍賣時段（entry/bid 兩種）切成每週一段，跨欄連續橫條顯示；
+// 同週多筆重疊時用簡單貪婪演算法分 lane（像 Google Calendar 疊層）
+const auctionBarsByWeek = computed(() => {
+  return weeks.value.map((week) => {
+    const rowStart = week[0].iso;
+    const rowEnd = week[6].iso;
+    const raw = store.auctions
+      .filter((a) => a.endDate >= rowStart && a.startDate <= rowEnd)
+      .map((a) => {
+        const clipStart = a.startDate < rowStart ? rowStart : a.startDate;
+        const clipEnd = a.endDate > rowEnd ? rowEnd : a.endDate;
+        const colStart = week.findIndex((c) => c.iso === clipStart) + 1;
+        const colEnd = week.findIndex((c) => c.iso === clipEnd) + 1;
+        return {
+          ...a,
+          key: `${a.roundTitle}_${a.periodLabel}_${a.startDate}`,
+          colStart,
+          colEnd,
+          roundedLeft: a.startDate >= rowStart,
+          roundedRight: a.endDate <= rowEnd,
+        };
+      })
+      .sort((x, y) => x.colStart - y.colStart);
+    // 貪婪分 lane：每個 lane 記錄目前佔用到哪一欄，新 bar 找第一個不衝突的 lane
+    const laneEnds = [];
+    for (const bar of raw) {
+      let lane = laneEnds.findIndex((end) => end < bar.colStart);
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(bar.colEnd); }
+      else laneEnds[lane] = bar.colEnd;
+      bar.lane = lane;
+    }
+    return raw;
+  });
+});
+const laneCountByWeek = computed(() => auctionBarsByWeek.value.map((bars) => bars.reduce((max, b) => Math.max(max, b.lane + 1), 0)));
+
 // 和風配色（比 Google 的原色柔和）
 const AREA_COLORS = {
   大阪: '#B84C3E', // 弁柄（べんがら，日式紅褐）
@@ -285,7 +364,6 @@ const AREA_COLORS_SOFT = {
 };
 // KSI 官公庁拍賣：深土黃（gavel/木槌色調）
 const AUCTION_COLOR = '#8B6914';
-const AUCTION_COLOR_SOFT = 'rgba(139, 105, 20, 0.10)';
 
 function areaColor(location) {
   for (const [area, color] of Object.entries(AREA_COLORS)) {
@@ -300,32 +378,17 @@ function areaColorSoft(location) {
   return 'rgba(121, 85, 72, 0.10)';
 }
 
-// 月曆格 chip helpers（market + auction 兩種）
-const AUCTION_TYPE_ABBR = {
-  entry_start: '📋申',
-  entry_end: '📋締',
-  bid_start: '⚖入',
-  bid_end: '⚖終',
-};
+// 月曆格 chip helpers（現在只給市集用，KSI 拍賣時段改用跨欄橫條 range-bar）
 function chipStyle(ev) {
-  if (ev.kind === 'auction') {
-    return { '--chip-color': AUCTION_COLOR, '--chip-bg': AUCTION_COLOR_SOFT };
-  }
   return {
     '--chip-color': areaColor(ev.market?.location),
     '--chip-bg': areaColorSoft(ev.market?.location),
   };
 }
 function chipTitle(ev) {
-  if (ev.kind === 'auction') {
-    return `${ev.typeLabel}（${ev.categoryLabel}）· ${ev.government}`;
-  }
   return `${ev.market.name} · ${ev.market.location}`;
 }
 function chipText(ev) {
-  if (ev.kind === 'auction') {
-    return AUCTION_TYPE_ABBR[ev.type] || '拍賣';
-  }
   return shortName(ev.market.name);
 }
 
@@ -400,6 +463,41 @@ function relativeLabel(iso) {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.6);
 }
+/* 每週一個 row：7 個 day-cell（row 1）+ 一個跨欄的 bars-layer（row 2，KSI 拍賣時段橫條） */
+.week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.bars-layer {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 15px;
+  gap: 2px 0;
+  padding: 1px 0 3px;
+}
+.range-bar {
+  grid-row: 1;
+  align-self: start;
+  height: 14px;
+  line-height: 14px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--bar-color, #8B6914);
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  margin: 0 -1px;
+}
+.range-bar.is-bid {
+  background: #6B5010;
+}
+.range-bar.rounded-l { border-top-left-radius: 7px; border-bottom-left-radius: 7px; margin-left: 2px; }
+.range-bar.rounded-r { border-top-right-radius: 7px; border-bottom-right-radius: 7px; margin-right: 2px; }
 .weekday-row {
   margin-bottom: 2px;
 }
@@ -416,10 +514,9 @@ function relativeLabel(iso) {
 
 /* Day cells */
 .day-cell {
-  min-height: 66px;
+  min-height: 50px;
   padding: 4px 3px 3px;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: background 0.15s;
   overflow: hidden;

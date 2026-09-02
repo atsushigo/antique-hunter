@@ -14,7 +14,7 @@
         <span class="font-weight-bold">
           {{ r.entryOpenNow ? '📋 現在可以申請' : '📋 新一輪拍賣' }}
         </span>
-        <span class="text-caption">{{ r.categoryLabel }}{{ r.government ? ` · ${r.government}` : '' }}</span>
+        <span class="text-caption">{{ r.roundTitle }}</span>
       </div>
       <div class="text-caption mt-1">
         申請期間：{{ r.entryStart }} ～ {{ r.entryEnd }}
@@ -27,7 +27,7 @@
         :href="r.url"
         target="_blank"
         rel="noopener"
-      >去看物件</v-btn>
+      >去看年間スケジュール</v-btn>
     </v-alert>
   </div>
 </template>

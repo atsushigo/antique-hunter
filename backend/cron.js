@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { SearchKeyword } from './models/SearchKeyword.js';
 import { runKeyword } from './routes/keywords.js';
 import { AuctionRound } from './models/AuctionRound.js';
-import { collectKsiSessionsWithDates } from './ksi-scraper.js';
+import { fetchAnnualSchedule } from './ksi-scraper.js';
 
 // 每天 08:00（本機時區）跑所有 active keywords + 偵測 KSI 新拍賣輪次
 export function startCron() {
@@ -34,37 +34,46 @@ export async function runAll() {
   return results;
 }
 
-// 掃 KSI 目前可見的所有 auction session，新出現的（auctionId 之前沒見過）記進 DB
+// 字串 hash 成穩定整數 — auction_rounds.auction_id 欄位沿用舊的 INTEGER UNIQUE schema，
+// 年間スケジュール沒有現成的數字 auctionId，用「輪次名稱+申込開始時間」算一個穩定 id 代替
+function stableHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// 掃 kankocho.jp/schedules/ 年間スケジュール，新出現的輪次記進 DB
 // 讓 HomeView 的 banner 抓得到「新輪次」提醒，不用 Sam 自己記得去查
+// 用官方年間スケジュール（而非逐物件爬蟲），連還沒上架物件的未來輪次也抓得到
 export async function checkNewAuctionRounds() {
-  const sessions = await collectKsiSessionsWithDates();
+  const schedule = await fetchAnnualSchedule();
   let newCount = 0;
-  for (const s of sessions) {
+  for (const round of schedule) {
+    const entry = round.periods.find((p) => p.label.includes('申し込み'));
+    if (!entry) continue;
+    const bidPeriods = round.periods.filter((p) => p !== entry);
+    const bidStart = bidPeriods.length ? bidPeriods.map((p) => p.startJst).sort()[0] : null;
+    const bidEnd = bidPeriods.length ? bidPeriods.map((p) => p.endJst).sort().pop() : null;
+    const auctionId = stableHash(`${round.title}|${entry.startJst}`);
     const [row, created] = await AuctionRound.findOrCreate({
-      where: { auctionId: s.auctionId },
+      where: { auctionId },
       defaults: {
-        category: s.category,
-        government: s.sampleGovernment,
-        sampleTitle: s.sampleTitle,
-        sampleItemId: s.sampleItemId,
-        entryStart: s.entryStart,
-        entryEnd: s.entryEnd,
-        bidStart: s.bidStart,
-        bidEnd: s.bidEnd,
+        category: null,
+        government: round.title,
+        sampleTitle: round.statusLabel,
+        sampleItemId: null,
+        entryStart: entry.startJst,
+        entryEnd: entry.endJst,
+        bidStart,
+        bidEnd,
         firstSeenAt: new Date(),
       },
     });
     if (created) newCount += 1;
     else {
-      // 日期可能被 KSI 更新過，同步一下但不動 dismissedAt
-      await row.update({
-        entryStart: s.entryStart,
-        entryEnd: s.entryEnd,
-        bidStart: s.bidStart,
-        bidEnd: s.bidEnd,
-      });
+      await row.update({ entryStart: entry.startJst, entryEnd: entry.endJst, bidStart, bidEnd, sampleTitle: round.statusLabel });
     }
   }
-  console.log(`[cron] KSI 輪次掃描：${sessions.length} 個 session，新增 ${newCount} 筆`);
-  return { total: sessions.length, newCount };
+  console.log(`[cron] KSI 年間スケジュール掃描：${schedule.length} 輪，新增 ${newCount} 筆`);
+  return { total: schedule.length, newCount };
 }

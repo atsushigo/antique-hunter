@@ -12,11 +12,9 @@ function serialize(r) {
   return {
     id: r.id,
     auctionId: r.auctionId,
-    category: r.category,
-    categoryLabel: r.category === 'car' ? '車輛' : r.category === 'real-estate' ? '不動產' : '一般',
-    government: r.government,
-    sampleTitle: r.sampleTitle,
-    url: r.sampleItemId ? `https://kankocho.jp/items/${r.sampleItemId}/` : null,
+    roundTitle: r.government, // 輪次名稱（インターネット公売 / 公有財産売却 等）
+    statusLabel: r.sampleTitle, // オークション開催前 / 入札期間中
+    url: r.sampleItemId ? `https://kankocho.jp/items/${r.sampleItemId}/` : 'https://kankocho.jp/schedules/',
     entryStart: r.entryStart,
     entryEnd: r.entryEnd,
     bidStart: r.bidStart,
