@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { fetchAnnualSchedule } from '../ksi-scraper.js';
+import { fetchAllKansaiCourtSchedules } from '../bit-scraper.js';
 
 export const auctionScheduleRouter = Router();
 
@@ -62,6 +63,37 @@ auctionScheduleRouter.get('/', async (req, res, next) => {
         });
       }
     }
+
+    // BIT 裁判所競売（法拍屋）— 沒有事前參加申込這一步，直接入札期間內送投標書即可。
+    // 只顯示「入札期間」（⚖ 真正能動作的時間段），不顯示「閲覧期間」——
+    // 閲覧期間常長達 1-2 個月、每個法院同時有好幾批案件在跑，全部畫出來會塞爆月曆，
+    // 資訊價值又低（只是「文件看得到」，不是「現在能做什麼」），故省略。
+    // 同一法院同一入札期間常有多批案件，用 court+起訖日 去重，避免疊出一堆一樣的橫條。
+    const bitRows = await fetchAllKansaiCourtSchedules();
+    const bidByKey = new Map(); // court|bidStart|bidEnd → row（保留開札日最早的一筆代表）
+    for (const row of bitRows) {
+      if (!row.bidStart || !row.bidEnd) continue;
+      const key = `${row.court}|${row.bidStart}|${row.bidEnd}`;
+      const existing = bidByKey.get(key);
+      if (!existing || (row.kaisatsuDate && row.kaisatsuDate < existing.kaisatsuDate)) bidByKey.set(key, row);
+    }
+    for (const row of bidByKey.values()) {
+      events.push({
+        source: 'bit',
+        sourceLabel: 'BIT 裁判所競売',
+        roundTitle: row.court,
+        statusLabel: row.status || '',
+        periodLabel: '入札期間',
+        type: 'bid',
+        subPeriods: row.kaisatsuDate ? [{ label: '開札日', endDate: row.kaisatsuDate, endTime: '' }] : null,
+        startDate: row.bidStart,
+        startTime: '',
+        endDate: row.bidEnd,
+        endTime: '',
+        url: `https://www.bit.courts.go.jp/app/schedule/pr005/h01?courtId=${row.courtId}`,
+      });
+    }
+
     // 區間跟 [from, to] 有重疊就收
     const filtered = events.filter((e) => {
       if (to && e.startDate > to) return false;
@@ -69,6 +101,6 @@ auctionScheduleRouter.get('/', async (req, res, next) => {
       return true;
     });
     filtered.sort((a, b) => a.startDate.localeCompare(b.startDate));
-    res.json({ data: filtered, roundsCount: schedule.length });
+    res.json({ data: filtered, roundsCount: schedule.length, bitRowsCount: bitRows.length });
   } catch (err) { next(err); }
 });

@@ -170,8 +170,8 @@ export const AUCTION_SOURCES = [
       foreignerNotes: '外國人可買，但農地/林地需要許可',
     },
     frequency: '每月各地方裁判所開催',
-    coveredByApp: false,
-    notes: 'Sam 不做不動產可略過。動產（船舶・車輛）少，但偶爾出現',
+    coveredByApp: true,
+    notes: 'Sam 不做不動產可略過。動產（船舶・車輛）少，但偶爾出現。2026-09 已整合近畿 7 個地方裁判所（大阪本庁/堺/岸和田、神戸本庁/尼崎、京都、奈良）的入札期間到 Calendar',
   },
   {
     id: 'mandarake',
