@@ -514,7 +514,7 @@ function relativeLabel(iso) {
 
 /* Day cells */
 .day-cell {
-  min-height: 50px;
+  min-height: 62px;
   padding: 4px 3px 3px;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
