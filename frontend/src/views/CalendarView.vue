@@ -71,21 +71,37 @@
               <div v-if="marketEvents(cell).length > 2" class="more">+{{ marketEvents(cell).length - 2 }}</div>
             </div>
           </div>
-          <!-- 拍賣時段橫條：跨欄連續顯示，同週多筆重疊會分 lane 疊層 -->
+          <!-- 連續多天的活動（市集連辦好幾天 / KSI 拍賣時段）跨欄橫條顯示，同週多筆重疊分 lane 疊層 -->
           <div class="bars-layer">
-            <a
-              v-for="bar in auctionBarsByWeek[wi]"
+            <component
+              :is="bar.kind === 'auction' ? 'a' : 'div'"
+              v-for="bar in barsByWeek[wi]"
               :key="bar.key"
               class="range-bar"
-              :class="{ 'is-bid': bar.type === 'bid', 'rounded-l': bar.roundedLeft, 'rounded-r': bar.roundedRight }"
-              :style="{ gridColumn: `${bar.colStart} / ${bar.colEnd + 1}`, gridRow: bar.lane + 1 }"
-              :href="bar.url"
-              target="_blank"
-              :title="`${bar.periodLabel}（${bar.roundTitle}）· ${bar.startDate} ${bar.startTime} ～ ${bar.endDate} ${bar.endTime}`"
+              :class="{
+                'is-bid': bar.kind === 'auction' && bar.type === 'bid',
+                'is-entry': bar.kind === 'auction' && bar.type === 'entry',
+                'is-market': bar.kind === 'market',
+                'rounded-l': bar.roundedLeft,
+                'rounded-r': bar.roundedRight,
+              }"
+              :style="{
+                gridColumn: `${bar.colStart} / ${bar.colEnd + 1}`,
+                gridRow: bar.lane + 1,
+                ...(bar.kind === 'market' ? { '--bar-color': bar.color } : {}),
+              }"
+              :href="bar.kind === 'auction' ? bar.url : undefined"
+              :target="bar.kind === 'auction' ? '_blank' : undefined"
+              :title="bar.kind === 'auction'
+                ? `${bar.periodLabel}（${bar.roundTitle}）· ${bar.startDate} ${bar.startTime} ～ ${bar.endDate} ${bar.endTime}`
+                : `${bar.fullLabel} · ${bar.market.location} · ${bar.startDate} ～ ${bar.endDate}`"
               @click.stop
             >
-              <span v-if="bar.roundedLeft">{{ bar.type === 'bid' ? '⚖' : '📋' }} {{ bar.roundTitle }}・{{ bar.periodLabel }}</span>
-            </a>
+              <span v-if="bar.roundedLeft">
+                <template v-if="bar.kind === 'auction'">{{ bar.type === 'bid' ? '⚖' : '📋' }} {{ bar.roundTitle }}・{{ bar.periodLabel }}</template>
+                <template v-else>{{ bar.label }}</template>
+              </span>
+            </component>
           </div>
         </div>
       </div>
@@ -323,33 +339,92 @@ const weeks = computed(() => {
   return rows;
 });
 
-function marketEvents(cell) {
-  return cell.events.filter((e) => e.kind === 'market');
+function addDay(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + 1);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
-// 把 KSI 拍賣時段（entry/bid 兩種）切成每週一段，跨欄連續橫條顯示；
+// 同一個市集連辦好幾天（例：神戸三宮アンティークフェア 9/17-9/22）在 store.list 裡是逐日分開的列，
+// 這裡把「同 marketId + 日期連續」的合併成一段，讓月曆能跨欄連續顯示，不用每天重複一個 chip
+const marketRanges = computed(() => {
+  const byMarket = new Map();
+  for (const e of store.list) {
+    const id = e.market.id;
+    if (!byMarket.has(id)) byMarket.set(id, []);
+    byMarket.get(id).push(e);
+  }
+  const ranges = [];
+  for (const [id, events] of byMarket) {
+    const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+    let run = [];
+    const flush = () => {
+      if (run.length) ranges.push({ marketId: id, market: run[0].market, startDate: run[0].date, endDate: run[run.length - 1].date, days: run.length });
+    };
+    for (const e of sorted) {
+      if (run.length && addDay(run[run.length - 1].date) === e.date) run.push(e);
+      else { flush(); run = [e]; }
+    }
+    flush();
+  }
+  return ranges.filter((r) => r.days >= 2); // 單天的市集維持原本 day-cell chip，不用橫條
+});
+
+// 已經被橫條涵蓋的「marketId+日期」，day-cell 的 chip 要排除，避免橫條 + chip 顯示兩次
+const coveredMarketDays = computed(() => {
+  const set = new Set();
+  for (const r of marketRanges.value) {
+    let d = r.startDate;
+    while (d <= r.endDate) { set.add(`${r.marketId}_${d}`); d = addDay(d); }
+  }
+  return set;
+});
+
+function marketEvents(cell) {
+  return cell.events.filter((e) => e.kind === 'market' && !coveredMarketDays.value.has(`${e.market.id}_${cell.iso}`));
+}
+
+// 把「連續多天的市集」+「KSI 拍賣時段（entry/bid）」統一切成每週一段，跨欄連續橫條顯示；
 // 同週多筆重疊時用簡單貪婪演算法分 lane（像 Google Calendar 疊層）
-const auctionBarsByWeek = computed(() => {
+const barsByWeek = computed(() => {
   return weeks.value.map((week) => {
     const rowStart = week[0].iso;
     const rowEnd = week[6].iso;
-    const raw = store.auctions
-      .filter((a) => a.endDate >= rowStart && a.startDate <= rowEnd)
-      .map((a) => {
-        const clipStart = a.startDate < rowStart ? rowStart : a.startDate;
-        const clipEnd = a.endDate > rowEnd ? rowEnd : a.endDate;
-        const colStart = week.findIndex((c) => c.iso === clipStart) + 1;
-        const colEnd = week.findIndex((c) => c.iso === clipEnd) + 1;
-        return {
-          ...a,
-          key: `${a.roundTitle}_${a.periodLabel}_${a.startDate}`,
-          colStart,
-          colEnd,
-          roundedLeft: a.startDate >= rowStart,
-          roundedRight: a.endDate <= rowEnd,
-        };
-      })
-      .sort((x, y) => x.colStart - y.colStart);
+    const clip = (startDate, endDate) => {
+      const clipStart = startDate < rowStart ? rowStart : startDate;
+      const clipEnd = endDate > rowEnd ? rowEnd : endDate;
+      return {
+        colStart: week.findIndex((c) => c.iso === clipStart) + 1,
+        colEnd: week.findIndex((c) => c.iso === clipEnd) + 1,
+        roundedLeft: startDate >= rowStart,
+        roundedRight: endDate <= rowEnd,
+      };
+    };
+    const raw = [];
+    for (const r of marketRanges.value) {
+      if (r.endDate < rowStart || r.startDate > rowEnd) continue;
+      raw.push({
+        kind: 'market',
+        key: `m${r.marketId}_${r.startDate}`,
+        label: shortName(r.market.name),
+        fullLabel: r.market.name,
+        market: r.market,
+        color: areaColor(r.market.location),
+        startDate: r.startDate,
+        endDate: r.endDate,
+        ...clip(r.startDate, r.endDate),
+      });
+    }
+    for (const a of store.auctions) {
+      if (a.endDate < rowStart || a.startDate > rowEnd) continue;
+      raw.push({
+        kind: 'auction',
+        key: `${a.roundTitle}_${a.periodLabel}_${a.startDate}`,
+        ...a,
+        ...clip(a.startDate, a.endDate),
+      });
+    }
+    raw.sort((x, y) => x.colStart - y.colStart);
     // 貪婪分 lane：每個 lane 記錄目前佔用到哪一欄，新 bar 找第一個不衝突的 lane
     const laneEnds = [];
     for (const bar of raw) {
@@ -361,7 +436,7 @@ const auctionBarsByWeek = computed(() => {
     return raw;
   });
 });
-const laneCountByWeek = computed(() => auctionBarsByWeek.value.map((bars) => bars.reduce((max, b) => Math.max(max, b.lane + 1), 0)));
+const laneCountByWeek = computed(() => barsByWeek.value.map((bars) => bars.reduce((max, b) => Math.max(max, b.lane + 1), 0)));
 
 // 和風配色（比 Google 的原色柔和）
 const AREA_COLORS = {
@@ -501,16 +576,23 @@ function relativeLabel(iso) {
   font-size: 9px;
   font-weight: 600;
   color: #fff;
-  background: #B8860B; /* 📋 参加申し込み受付期間（ENTRY_COLOR） */
+  background: var(--bar-color, #795548);
   padding: 0 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-decoration: none;
   margin: 0 -1px;
+  cursor: pointer;
+}
+.range-bar.is-entry {
+  background: #B8860B; /* 📋 参加申し込み受付期間（ENTRY_COLOR） */
 }
 .range-bar.is-bid {
   background: #2F6B62; /* ⚖ 入札期間（BID_COLOR） */
+}
+.range-bar.is-market {
+  background: var(--bar-color, #795548);
 }
 .range-bar.rounded-l { border-top-left-radius: 7px; border-bottom-left-radius: 7px; margin-left: 2px; }
 .range-bar.rounded-r { border-top-right-radius: 7px; border-bottom-right-radius: 7px; margin-right: 2px; }
