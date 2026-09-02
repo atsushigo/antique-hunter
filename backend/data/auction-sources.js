@@ -36,6 +36,7 @@ export const AUCTION_SOURCES = [
     method: 'offline', // 現地公売
     coverage: '大阪府內遺失物自転車（未認領品）',
     region: '大阪',
+    contact: '06-6943-1234（大阪府警本部代表）',
     fee: {
       participation: '無入場費',
       deposit: '現場現金決済',
@@ -49,7 +50,7 @@ export const AUCTION_SOURCES = [
     },
     frequency: '不定期，年 2-4 回',
     coveredByApp: false,
-    notes: '常在大阪府警本部或轄下警察署辦。¥1,000-5,000 撿自転車常見。要打電話確認',
+    notes: '常在大阪府警本部或轄下警察署辦。¥1,000-5,000 撿自転車常見。要打電話確認。官網首頁沒列細節，需點「落とし物情報」（otoshimono.police.pref.osaka.jp）或直接致電（2026-09 查詢時官網無公告場次）',
   },
   {
     id: 'hyogo-police-bicycle',
@@ -60,7 +61,7 @@ export const AUCTION_SOURCES = [
     method: 'offline',
     coverage: '兵庫県內遺失物自転車 + 少量雜物',
     region: '兵庫',
-    contact: '078-341-7441（本部会計課）',
+    contact: '078-321-0293（本部交通部交通指導課 放置駐車管理センター執行係）',
     fee: {
       participation: '無入場費',
       deposit: '現場現金決済',
@@ -74,7 +75,7 @@ export const AUCTION_SOURCES = [
     },
     frequency: '不定期，年 2-4 回；另有 KSI 線上公売',
     coveredByApp: false,
-    notes: '現地下見+入札。網頁不定期更新次回日期，需常刷。KSI 線上部分 App 已抓',
+    notes: '現地下見+入札。網頁不定期更新次回日期，需常刷（2026-09 查詢時網頁明講「ただ今、実施予定の公売はありません」）。KSI 線上部分 App 已抓',
   },
   {
     id: 'osaka-customs',
