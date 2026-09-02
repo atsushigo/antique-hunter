@@ -28,8 +28,8 @@
       <b>✅ 可以</b> — 但需符合條件
     </v-alert>
     <ul>
-      <li><b>日本國內居住</b> + 有 <b>Yahoo! JAPAN ID</b>（KSI 用 Yahoo ID 登入）</li>
-      <li>需要 <b>日本銀行帳戶</b>（付保証金 + 落札後付款）</li>
+      <li><b>18 歲以上</b> + 能理解日語即可，<b>不需要 Yahoo! JAPAN ID</b>（KSI 有自己的 email + 密碼會員系統）</li>
+      <li>需要 <b>日本銀行帳戶</b>（付保証金 + 落札後付款，方式依物件標示為信用卡 or 銀行轉帳）</li>
       <li>不動產需 <b>買受適格證明書</b>（部分農地、林地限日本國籍/法人）</li>
       <li>[redacted]</li>
     </ul>
@@ -37,11 +37,10 @@
     <h2>拍賣流程（4 步驟）</h2>
 
     <div class="step">
-      <h3>Step 1：注冊 + 綁 Yahoo ID</h3>
+      <h3>Step 1：註冊 KSI 會員</h3>
       <p>
-        KSI 用 Yahoo! JAPAN ID 認證。若無：
-        <a href="https://account.edit.yahoo.co.jp/registration" target="_blank">申請 Yahoo ID</a>。
-        接著在 <a href="https://kankocho.jp" target="_blank">kankocho.jp</a> 完成本人確認（免費，含姓名/地址/電話）。
+        直接去 <a href="https://kankocho.jp" target="_blank">kankocho.jp</a> 點「新規登録」，
+        email + 密碼 + 收驗證碼，5 步驟就能完成，<b>不需要 Yahoo! JAPAN ID</b>。
       </p>
     </div>
 
@@ -61,12 +60,27 @@
     <div class="step">
       <h3>Step 3：入札（出價）</h3>
       <p>
-        <b>入札期間</b> 內出價：
+        <b>入札期間</b> 內出價，物件會標明是哪一種結算方式，兩種常混在同一輪一起跑（截止日也不一樣）：
       </p>
+      <v-table density="compact" class="term-table mb-2">
+        <thead>
+          <tr><th>日文</th><th>中文對應</th><th>意思</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>せり売り</td>
+            <td>喊價式拍賣<br>（英式拍賣）</td>
+            <td>大家看得到目前價格，公開加價喊高，時間到出最高者得標。可以跟著別人出價博弈</td>
+          </tr>
+          <tr>
+            <td>入札</td>
+            <td>投標 / 密封標</td>
+            <td>各自密封交一次出價，互相看不到，開標後比價格。出低了沒有補救機會</td>
+          </tr>
+        </tbody>
+      </v-table>
       <ul>
-        <li><b>せり売形式</b>（拍賣式）— 隨時可加價，最高者得</li>
-        <li><b>入札形式</b>（投標式）— 一次密封出價，公開時最高者得</li>
-        <li>可設「自動入札」上限，系統代加價</li>
+        <li>せり売可設「自動入札」上限，系統代加價</li>
         <li>入札期間結束 = 拍賣結束</li>
       </ul>
     </div>
@@ -242,6 +256,9 @@ onMounted(async () => {
 .guide h2 { margin-top: 24px; margin-bottom: 12px; font-size: 18px; font-weight: 600; color: #3E2723; border-bottom: 2px solid #795548; padding-bottom: 4px; }
 .guide h3 { margin-top: 12px; margin-bottom: 6px; font-size: 15px; font-weight: 600; color: #5D4037; }
 .guide p { line-height: 1.7; color: #3E2723; margin: 8px 0; }
+.term-table { border: 1px solid rgba(121, 85, 72, 0.2); border-radius: 8px; overflow: hidden; }
+.term-table :deep(th) { background: rgba(121, 85, 72, 0.06); font-weight: 600; }
+.term-table :deep(td), .term-table :deep(th) { font-size: 12.5px; line-height: 1.6; padding: 8px !important; }
 .guide ul, .guide ol { padding-left: 24px; line-height: 1.9; color: #3E2723; }
 .guide li { margin: 3px 0; }
 .guide a { color: #795548; }

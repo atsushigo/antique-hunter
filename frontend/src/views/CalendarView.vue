@@ -116,9 +116,19 @@
           <span class="legend-dot" :style="{ background: ENTRY_COLOR }" />
           <span class="text-caption">📋 官公庁申請期間</span>
         </span>
-        <span class="d-flex align-center">
+        <span class="d-flex align-center legend-hint">
           <span class="legend-dot" :style="{ background: BID_COLOR }" />
           <span class="text-caption">⚖ 官公庁入札期間</span>
+          <v-tooltip location="top" max-width="260">
+            <template #activator="{ props }">
+              <v-icon v-bind="props" size="14" class="ms-1" color="medium-emphasis">mdi-help-circle-outline</v-icon>
+            </template>
+            <div class="text-caption">
+              <b>せり売り</b>＝喊價式拍賣（公開加價，最高者得）<br>
+              <b>入札</b>＝密封投標（各自出一次，開標比價格）<br>
+              同一輪常兩種都有，截止時間不同
+            </div>
+          </v-tooltip>
         </span>
       </div>
     </v-col>
