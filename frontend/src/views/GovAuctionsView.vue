@@ -1,8 +1,11 @@
 <template>
   <v-container class="px-3 pb-16">
-    <div class="d-flex align-center mb-2">
+    <div class="d-flex align-center mb-2 ga-2">
       <v-btn size="x-small" variant="text" icon="mdi-refresh" :loading="loading" @click="load" />
       <v-spacer />
+      <v-btn size="x-small" variant="tonal" color="primary" prepend-icon="mdi-gavel" @click="$router.push('/bit-auctions')">
+        BIT 法拍屋
+      </v-btn>
       <v-btn size="x-small" variant="tonal" color="secondary" prepend-icon="mdi-book-open-page-variant" @click="$router.push('/gov-auctions/guide')">
         入門手冊
       </v-btn>

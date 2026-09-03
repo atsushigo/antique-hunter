@@ -19,6 +19,7 @@ import { auctionScheduleRouter } from './routes/auction-schedule.js';
 import { auctionSourcesRouter } from './routes/auction-sources.js';
 import { knowledgeRouter } from './routes/knowledge.js';
 import { auctionRoundsRouter } from './routes/auction-rounds.js';
+import { bitPropertiesRouter } from './routes/bit-properties.js';
 import './models/AuctionKnowledge.js';
 import './models/AuctionRound.js';
 import { startCron } from './cron.js';
@@ -58,6 +59,7 @@ app.use('/api/auction-schedule', auctionScheduleRouter);
 app.use('/api/auction-sources', auctionSourcesRouter);
 app.use('/api/knowledge', knowledgeRouter);
 app.use('/api/auction-rounds', auctionRoundsRouter);
+app.use('/api/bit-properties', bitPropertiesRouter);
 
 app.get('/api/health', async (req, res) => {
   let db = 'ok';

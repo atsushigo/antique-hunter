@@ -197,7 +197,7 @@
             <!-- 同一輪不同結算方式（せり売/入札）截止時間不同時分行列出，避免顯示成兩張幾乎一樣的卡片 -->
             <div v-if="ev.subPeriods" class="text-caption text-medium-emphasis mt-1 sub-periods">
               <div v-for="sp in ev.subPeriods" :key="sp.label">
-                ・{{ sp.label }} 截止 {{ sp.endDate }} {{ sp.endTime }}
+                ・{{ sp.label }}：{{ sp.endDate }} {{ sp.endTime }}
               </div>
             </div>
             <div class="text-caption text-medium-emphasis mt-1">
@@ -261,7 +261,7 @@
                 <template v-if="ev.isRangeEnd && !ev.subPeriods">～ 截止 {{ ev.endTime }}</template>
               </div>
               <div v-if="ev.subPeriods" class="text-caption text-medium-emphasis mt-1 sub-periods">
-                <div v-for="sp in ev.subPeriods" :key="sp.label">・{{ sp.label }} 截止 {{ sp.endDate }} {{ sp.endTime }}</div>
+                <div v-for="sp in ev.subPeriods" :key="sp.label">・{{ sp.label }}：{{ sp.endDate }} {{ sp.endTime }}</div>
               </div>
               <div class="text-caption text-medium-emphasis mt-1">🏛 {{ ev.statusLabel }} · {{ ev.sourceLabel || 'KSI 官公庁' }}</div>
             </v-card-text>

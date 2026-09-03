@@ -12,13 +12,15 @@ pass() { echo "  ✓ $1"; PASS=$((PASS+1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL+1)); }
 
 echo "== Frontend routes =="
-for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty /gov-auctions /gov-auctions/guide /knowledge /pipeline; do
+for path in / /camera /markets /calendar /url /collection /keywords /inbox /search /history /accounts /jimoty /gov-auctions /gov-auctions/guide /bit-auctions /knowledge /pipeline; do
   code=$(curl -sS -o /dev/null -w "%{http_code}" "$WEB$path")
   [ "$code" = "200" ] && pass "GET $path → 200" || fail "GET $path → $code"
 done
 
 echo ""
 echo "== Backend APIs =="
+# 註：/api/bit-properties 沒放進這裡 —— 它會即時跑一次 Playwright 點官網（~5-8秒），
+# 放進來會拖慢每輪 smoke test，需要單獨手動測
 check_json() {
   local name=$1; local url=$2; local jq_check=$3
   local body=$(curl -sS "$url")

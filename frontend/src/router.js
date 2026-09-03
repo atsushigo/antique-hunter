@@ -80,6 +80,12 @@ const routes = [
     meta: { title: '官公庁拍賣手冊' },
   },
   {
+    path: '/bit-auctions',
+    name: 'bit-auctions',
+    component: () => import('./views/BitAuctionsView.vue'),
+    meta: { title: 'BIT 裁判所競売' },
+  },
+  {
     path: '/knowledge',
     name: 'knowledge',
     component: () => import('./views/KnowledgeView.vue'),
