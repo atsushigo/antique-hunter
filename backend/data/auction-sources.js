@@ -26,6 +26,11 @@ export const AUCTION_SOURCES = [
     frequency: '常年，多輪並行',
     coveredByApp: true,
     notes: 'App 已整合，Calendar 顯示 4 個 milestone。兵庫県警・警視庁・国税庁の物件多在此上架。註冊流程：https://kankocho.jp/ 點「新規登録」，email 收驗證碼即可，5 步驟完成（2026-09 查證，官方 help.kankocho.jp/knowledge/help030）',
+    budgetFit: {
+      icon: '✅',
+      status: '已有帳號 + 銀行帳戶，隨時能參加；車輛/雜物大多 ¥1萬-30萬',
+      verdict: '目前最該關注，門檻最低、已完全就緒',
+    },
   },
   {
     id: 'osaka-police-bicycle',
@@ -51,6 +56,11 @@ export const AUCTION_SOURCES = [
     frequency: '不定期，年 2-4 回',
     coveredByApp: false,
     notes: '常在大阪府警本部或轄下警察署辦。¥1,000-5,000 撿自転車常見。要打電話確認。官網首頁沒列細節，需點「落とし物情報」（otoshimono.police.pref.osaka.jp）或直接致電（2026-09 查詢時官網無公告場次）',
+    budgetFit: {
+      icon: '📞',
+      status: '¥1,000-5,000 便宜，但官網目前沒公告場次',
+      verdict: '得手動打電話問，做不了自動化',
+    },
   },
   {
     id: 'hyogo-police-bicycle',
@@ -76,6 +86,11 @@ export const AUCTION_SOURCES = [
     frequency: '不定期，年 2-4 回；另有 KSI 線上公売',
     coveredByApp: false,
     notes: '現地下見+入札。網頁不定期更新次回日期，需常刷（2026-09 查詢時網頁明講「ただ今、実施予定の公売はありません」）。KSI 線上部分 App 已抓',
+    budgetFit: {
+      icon: '📞',
+      status: '¥1,000-5,000 便宜，官網明講目前無公告場次',
+      verdict: '得手動打電話問，做不了自動化',
+    },
   },
   {
     id: 'osaka-customs',
@@ -100,6 +115,11 @@ export const AUCTION_SOURCES = [
     frequency: '不定期，官報公告',
     coveredByApp: false,
     notes: '走私沒收 = 常有 Rolex/Chanel/洋酒等高價品，撿漏空間大但競爭者是專業業者',
+    budgetFit: {
+      icon: '⏸️',
+      status: '手錶/貴金屬/洋酒貼近興趣，但 2026-09 查證公告頁完全是空的',
+      verdict: '不定期到近乎沒有，只能偶爾手動翻',
+    },
   },
   {
     id: 'kobe-customs',
@@ -124,6 +144,11 @@ export const AUCTION_SOURCES = [
     frequency: '不定期，官報公告',
     coveredByApp: false,
     notes: 'Sam 從武庫川団地開車 20 分內可到，通天閣 30 分。神戸港靠海 = 密輸品最多',
+    budgetFit: {
+      icon: '⏸️',
+      status: '同大阪税関管轄邏輯，一樣不定期',
+      verdict: '同上，偶爾手動翻即可',
+    },
   },
   {
     id: 'nta-koubai',
@@ -148,6 +173,11 @@ export const AUCTION_SOURCES = [
     frequency: '常年',
     coveredByApp: true,
     notes: '80% 物件在 KSI 上架，本站是官方索引。App 已覆蓋主流',
+    budgetFit: {
+      icon: '✅',
+      status: '80% 物件已在 KSI 上架，這站只是官方索引',
+      verdict: '不用另外關注，KSI 已涵蓋主流',
+    },
   },
   {
     id: 'bit-courts',
@@ -172,13 +202,18 @@ export const AUCTION_SOURCES = [
     frequency: '每月各地方裁判所開催',
     coveredByApp: true,
     notes: 'Sam 不做不動產可略過。動產（船舶・車輛）少，但偶爾出現。2026-09 已整合近畿 7 個地方裁判所（大阪本庁/堺/岸和田、神戸本庁/尼崎、京都、奈良）的入札期間到 Calendar',
+    budgetFit: {
+      icon: '⏸️',
+      status: '最便宜物件也要 ¥81萬起跳 + 登記/修繕費，等於押走大半預算在不好脫手的資產',
+      verdict: '先擱置，有空當熱鬧看看就好',
+    },
   },
   {
     id: 'mandarake',
     name: 'まんだらけオークション',
     shortName: 'まんだらけ',
-    url: 'https://ekizo.mandarake.co.jp/auction/item/indexJa.html',
-    scheduleUrl: 'https://ekizo.mandarake.co.jp/auction/item/indexJa.html',
+    url: 'https://www.mandarake.co.jp/auction/bigauction/',
+    scheduleUrl: 'https://www.mandarake.co.jp/auction/bigauction/',
     method: 'online',
     coverage: '動漫・古書・骨董・玩具・同人（非政府拍賣）',
     region: '全國（線上）',
@@ -195,7 +230,12 @@ export const AUCTION_SOURCES = [
     },
     frequency: '月 2-4 場',
     coveredByApp: false,
-    notes: '非官方拍賣，但骨董/漫畫古本業界撿漏名場。適合 Sam 古董定位',
+    notes: '非官方拍賣，但骨董/漫畫古本業界撿漏名場。適合 Sam 古董定位。2026-09 查證：舊網址（ekizo.mandarake.co.jp）已失效重導回首頁，網站結構換了，沒能可靠抓到即時清單/價格',
+    budgetFit: {
+      icon: '🤷',
+      status: '業界公認撿漏名場，理論上很貼定位，但網站結構換了，沒能可靠抓到即時清單/價格',
+      verdict: '值得手動去看一次，資料沒法保證',
+    },
   },
 ];
 

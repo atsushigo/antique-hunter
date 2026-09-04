@@ -6,6 +6,7 @@
     </div>
 
     <AuctionRoundAlert />
+    <BudgetFitTable />
 
     <!-- 3 個主要功能大卡 -->
     <div class="d-flex flex-column ga-3">
@@ -132,6 +133,7 @@ import { useRouter } from 'vue-router';
 import { useAppraisalsStore } from '../stores/appraisals.js';
 import { useKeywordsStore } from '../stores/keywords.js';
 import AuctionRoundAlert from '../components/AuctionRoundAlert.vue';
+import BudgetFitTable from '../components/BudgetFitTable.vue';
 
 const router = useRouter();
 const store = useAppraisalsStore();
