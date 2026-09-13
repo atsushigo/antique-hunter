@@ -95,8 +95,15 @@
 
     <v-progress-linear v-if="loading" indeterminate height="2" color="primary" class="mb-2" />
 
-    <div v-if="!loading && !logs.length" class="text-caption text-medium-emphasis text-center pa-8">
-      這段時間沒有紀錄
+    <div v-if="!loading && !logs.length" class="text-center pa-8">
+      <v-icon size="40" color="grey">mdi-history</v-icon>
+      <div class="text-body-2 mt-2 text-medium-emphasis">這段時間沒有紀錄</div>
+      <div class="text-caption text-medium-emphasis mt-1 mb-3">
+        換個時間範圍看看，或去拍張照
+      </div>
+      <v-btn color="primary" variant="tonal" size="small" prepend-icon="mdi-camera" @click="$router.push('/camera')">
+        去拍一張看看
+      </v-btn>
     </div>
 
     <div v-if="!loading && !filteredLogs.length && logs.length" class="text-caption text-medium-emphasis text-center pa-4">

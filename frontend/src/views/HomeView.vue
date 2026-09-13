@@ -96,8 +96,15 @@
         >重新整理</v-btn>
       </div>
 
-      <div v-if="!store.list.length" class="text-caption text-medium-emphasis text-center pa-6">
-        還沒有紀錄
+      <div v-if="!store.list.length" class="text-center pa-6">
+        <v-icon size="40" color="grey">mdi-image-search-outline</v-icon>
+        <div class="text-body-2 mt-2 text-medium-emphasis">還沒有紀錄</div>
+        <div class="text-caption text-medium-emphasis mt-1 mb-3">
+          拍張照試試 AI 估價準不準
+        </div>
+        <v-btn color="primary" variant="tonal" size="small" prepend-icon="mdi-camera" @click="$router.push('/camera')">
+          去拍一張看看
+        </v-btn>
       </div>
 
       <v-row v-else dense>
