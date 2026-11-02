@@ -21,6 +21,7 @@ export const config = {
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
   },
+  apiKey: process.env.API_KEY || '',
 };
 
 export const isDev = config.env === 'development';

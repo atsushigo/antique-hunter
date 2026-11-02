@@ -5,6 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config, isDev } from './config.js';
+import { requireApiKey } from './middleware/require-api-key.js';
 import { connect, sequelize } from './db.js';
 import { marketsRouter } from './routes/markets.js';
 import { appraisalRouter } from './routes/appraisal.js';
@@ -46,21 +47,7 @@ app.use(
   })
 );
 
-app.use('/api/markets', marketsRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/appraisal', appraisalRouter);
-app.use('/api/keywords', keywordsRouter);
-app.use('/api/search', searchRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/jimoty', jimotyRouter);
-app.use('/api/img-proxy', imgProxyRouter);
-app.use('/api/gov-auctions', govAuctionsRouter);
-app.use('/api/auction-schedule', auctionScheduleRouter);
-app.use('/api/auction-sources', auctionSourcesRouter);
-app.use('/api/knowledge', knowledgeRouter);
-app.use('/api/auction-rounds', auctionRoundsRouter);
-app.use('/api/bit-properties', bitPropertiesRouter);
-
+// /api/health 刻意放在 requireApiKey 之前 → 監控/uptime check 不需要帶金鑰
 app.get('/api/health', async (req, res) => {
   let db = 'ok';
   try {
@@ -76,6 +63,23 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use('/api/', requireApiKey);
+
+app.use('/api/markets', marketsRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/appraisal', appraisalRouter);
+app.use('/api/keywords', keywordsRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/jimoty', jimotyRouter);
+app.use('/api/img-proxy', imgProxyRouter);
+app.use('/api/gov-auctions', govAuctionsRouter);
+app.use('/api/auction-schedule', auctionScheduleRouter);
+app.use('/api/auction-sources', auctionSourcesRouter);
+app.use('/api/knowledge', knowledgeRouter);
+app.use('/api/auction-rounds', auctionRoundsRouter);
+app.use('/api/bit-properties', bitPropertiesRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'not_found', path: req.path });

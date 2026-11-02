@@ -1,5 +1,6 @@
 // 從二手商品頁面（Mercari / Yahoo Auction / Rakuma）抓 og metadata + 商品圖 + 掛牌價
 // SSRF 保護：域名白名單 + HTTPS only + 圖片大小/timeout 上限
+import { assertPublicHost } from './lib/ssrf-guard.js';
 
 const ALLOWED_HOSTS = new Set([
   'jp.mercari.com',
@@ -244,7 +245,12 @@ export async function fetchImage(url) {
   if (parsed.protocol !== 'https:') {
     throw new UrlFetchError('invalid_image_url', '商品圖片必須為 HTTPS');
   }
-  // 商品圖 CDN 通常在其他 host（e.g. static.mercdn.net），不強制白名單，只擋非 https
+  // 商品圖 CDN 通常在其他 host（e.g. static.mercdn.net），不強制白名單，但擋內網/本機位址（SSRF defense-in-depth）
+  try {
+    await assertPublicHost(parsed.hostname);
+  } catch (err) {
+    throw new UrlFetchError('ssrf_blocked', '商品圖片 URL 指向內網位址，已擋下', 400);
+  }
   const { buffer, contentType } = await fetchWithLimits(url, {
     timeoutMs: IMG_TIMEOUT_MS,
     maxBytes: MAX_IMG_BYTES,

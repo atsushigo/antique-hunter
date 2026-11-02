@@ -2,8 +2,13 @@ import { Router } from 'express';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Joi from 'joi';
 import { SITES } from '../auth/sites.js';
 import { checkStatus, clearState } from '../auth/session-store.js';
+
+const pasteBodySchema = Joi.object({
+  cookie: Joi.string().min(1).max(8192).required(),
+});
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const loginScript = path.resolve(here, '../scripts/auth-login.mjs');
@@ -53,8 +58,9 @@ authRouter.post('/paste/:site', async (req, res, next) => {
   try {
     const siteId = req.params.site;
     if (!SITES[siteId]) return res.status(400).json({ error: 'unknown_site' });
-    const raw = String(req.body?.cookie || '').trim();
-    if (!raw) return res.status(400).json({ error: 'missing_cookie' });
+    const { error, value } = pasteBodySchema.validate(req.body);
+    if (error) return res.status(400).json({ error: 'invalid_body', message: error.message });
+    const raw = value.cookie.trim();
 
     const site = SITES[siteId];
     const domain = site.cookieDomain || site.baseUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');

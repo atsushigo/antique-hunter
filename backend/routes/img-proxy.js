@@ -7,6 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadState, toCookieHeader } from '../auth/session-store.js';
+import { assertPublicHost } from '../lib/ssrf-guard.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.resolve(here, '../data/img-cache');
@@ -53,6 +54,8 @@ imgProxyRouter.get('/', async (req, res) => {
   try { u = new URL(raw); } catch { return res.status(400).send('bad url'); }
   if (u.protocol !== 'https:') return res.status(400).send('https only');
   if (!ALLOWED_HOSTS.has(u.hostname)) return res.status(403).send('host not allowed');
+  // allowlist 已經擋了大部分情況，這裡再補一層 SSRF defense-in-depth（擋內網/本機位址）
+  try { await assertPublicHost(u.hostname); } catch { return res.status(403).send('host not allowed'); }
 
   // 檢查 disk cache（未來 Sam 切 JP IP 抓過的圖永久可用）
   const cached = await getCached(raw);
