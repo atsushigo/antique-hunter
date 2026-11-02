@@ -4,6 +4,9 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { config, isDev } from './config.js';
 import { requireApiKey } from './middleware/require-api-key.js';
 import { connect, sequelize } from './db.js';
@@ -80,6 +83,18 @@ app.use('/api/auction-sources', auctionSourcesRouter);
 app.use('/api/knowledge', knowledgeRouter);
 app.use('/api/auction-rounds', auctionRoundsRouter);
 app.use('/api/bit-properties', bitPropertiesRouter);
+
+// 單一 port 部署用：如果 frontend 有 production build（../frontend/dist）就一起伺服，
+// 本機開發(分開跑 :3000 + :5173 vite dev server)沒有這個資料夾時這段整個不生效，不影響原本流程
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.resolve(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA client-side routing fallback：非 /api/ 的路徑都回傳 index.html，交給 vue-router 處理
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   res.status(404).json({ error: 'not_found', path: req.path });
