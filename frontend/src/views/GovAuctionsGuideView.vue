@@ -7,7 +7,7 @@
     <div class="text-h5 mb-3">KSI 官公庁オークション 入門手冊</div>
 
     <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-      [redacted]；距離取最小值 +（武）/（通）標記。
+      你的兩個常用地標：<b>兵庫尼崎（武庫川団地）</b> + <b>大阪（通天閣）</b>；距離取最小值 +（武）/（通）標記。
       有車 → 20-50km 內都可自取，省 ¥3-10k 運費。
     </v-alert>
 
@@ -31,7 +31,6 @@
       <li><b>18 歲以上</b> + 能理解日語即可，<b>不需要 Yahoo! JAPAN ID</b>（KSI 有自己的 email + 密碼會員系統）</li>
       <li>需要 <b>日本銀行帳戶</b>（付保証金 + 落札後付款，方式依物件標示為信用卡 or 銀行轉帳）</li>
       <li>不動產需 <b>買受適格證明書</b>（部分農地、林地限日本國籍/法人）</li>
-      <li>[redacted]</li>
     </ul>
 
     <h2>拍賣流程（4 步驟）</h2>

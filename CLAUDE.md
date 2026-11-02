@@ -10,10 +10,10 @@ Sam 個人用的日本二手/古董撿漏 PWA — Vue 3 + Node.js + Express + SQ
 
 ## 使用者上下文（省得每次問）
 
-- **Sam** = 唯一 user，[redacted]，有車
+- **Sam** = 唯一 user，有兩個常住地標用於距離計算（實際地點不寫進 repo，見本機筆記），有車
 - 目標：骨董 / 中古車 / 手錶 / 相機 / 官公庁拍賣品
-- [redacted]
-- [redacted]
+- 繁中溝通為主
+- 身份條件符合 KSI 拍賣完整參加資格
 
 ## Tech Stack
 
