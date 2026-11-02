@@ -155,7 +155,7 @@
     <!-- 部署 -->
     <h2>部署架構決策</h2>
     <div class="callout">
-      <p><b>Backend：</b>Hetzner CX33 現有 VPS（跟 其他個人專案共用）</p>
+      <p><b>Backend：</b>Hetzner CX33 現有 VPS（跟其他個人專案同機）</p>
       <ul>
         <li>加 1 Docker container，~500 MB RAM</li>
         <li>Playwright headless Chromium 另 ~500-800 MB（只在 Cron 跑時吃）</li>

@@ -119,7 +119,7 @@
 ## 部署架構決策
 
 **選定：**
-- **Backend**：Hetzner CX33 現有 VPS（跟你 其他個人專案共用）
+- **Backend**：Hetzner CX33 現有 VPS（跟其他個人專案共用）
   - 加 1 Docker container，~500 MB RAM
   - Playwright headless Chromium 另 ~500-800 MB（只在 Cron 跑時吃）
   - SQLite 檔在 VPS disk，rsync 定期備份到你 Mac

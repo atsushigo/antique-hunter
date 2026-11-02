@@ -58,7 +58,7 @@
 - 沒推到 Hetzner（下一階段）
 
 **計畫部署（見 `docs/APPRAISAL_PIPELINE.md`）：**
-- Backend → Hetzner CX33（跟 其他個人專案共用，剩 ~4GB RAM）
+- Backend → Hetzner CX33（跟其他個人專案共用，剩 ~4GB RAM）
 - Frontend PWA → Cloudflare Pages（免費 static）
 - Auth → 單人簡易 API token header
 - Public 存取 → subdomain + Cloudflare tunnel
@@ -333,7 +333,7 @@ node /tmp/audit.mjs
 - **Yahoo JAPAN ID** — 用於 Yahoo Auction 收藏 + KSI 拍賣參加
 - **Jimoty account** — cookie session（要 CLI 貼 Chromium DevTools 抓的 value）
 - **Mercari / Rakuma account** — 同上機制
-- **Hetzner VPS**（Sam 已有）— tmux `personal:4` 的 CX33，跟 其他個人專案共用
+- **Hetzner VPS**（Sam 已有）— tmux `personal:4` 的 CX33，跟其他個人專案共用
 - **Cloudflare** — 若上線用 Pages + tunnel
 - **SerpAPI** — 反向圖搜（$50/mo，optional）
 
