@@ -25,8 +25,8 @@
 
 | 項目 | 值 |
 |---|---|
-| 常住點 A | 武庫川団地（兵庫尼崎 [redacted]） |
-| 常住點 B | 通天閣（大阪 [redacted]） |
+| [redacted] |
+| [redacted] |
 | 交通 | 有車 → 20-50km 內物件可自取（省 ¥3-10k 運費） |
 | 目標物件 | 骨董 / 中古車 / 手錶 / 相機 / 老家具 / 官公庁拍賣品 |
 | [redacted] |
@@ -313,8 +313,7 @@ node /tmp/audit.mjs
 - ✅ Phase 7：UI 精簡（5 view）+ 新手 UX（tagline / CTA / tooltip）
 - ✅ Phase 8：Camera 多張照片（1-5）+ 補充描述
 - ✅ Phase 9：交接文件（這份 + CLAUDE.md + STATUS 刷新）
-- ✅ Phase 10：Repo migrate 到 `atsushigo/antique-hunter`（2026-08-20，
-  舊 repo `[redacted]/antique-hunter` 仍存在未動）
+- ✅ Phase 10：Repo migrate 到 `atsushigo/antique-hunter`（2026-08-20）
 
 **下一步（by ROI，見 `/pipeline` view 或 `docs/APPRAISAL_PIPELINE.md`）：**
 1. **部 backend 到 Hetzner CX33** ← 最大 QoL 提升，沒這步出門用不到

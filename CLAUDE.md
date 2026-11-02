@@ -102,5 +102,4 @@ Sam 個人用的日本二手/古董撿漏 PWA — Vue 3 + Node.js + Express + SQ
 
 **深入細節看 `docs/HANDOFF.md`（含 Patterns · 如何加新東西 section）。**
 
-**Repo：** `atsushigo/antique-hunter`（migrate 自舊的 `[redacted]`，
-舊 repo 未動仍存在做備援）。Local git remote 用 SSH alias `git@github-atsushigo:...`。
+**Repo：** `atsushigo/antique-hunter`。Local git remote 用 SSH alias `git@github-atsushigo:...`。
